@@ -1,1 +1,138 @@
-# muell-blinker
+# Mülltonnen-Blinker
+
+## Zutaten:
+- RTC-Board mit DS3231, EEPROM 24C32 und Knopzelle (gibt's im großen Onlineauktionshaus)
+- ATtiny24
+- Taster
+- max. 7 LEDs
+
+## Verwendung:
+Zeigt mittels blinkender LED(s) an daß die Müllabfuhr kommt und welche Tonne(n) an die Straße gebracht werden müssen.
+
+## Daten erstellen:
+Mittels Datei "Abfuhrkalender.ods" im Ordner infos oder selbst erzeugen.
+
+*Abfuhrdaten müssen:* 
+- Entweder im EEPROM (24C32) des DS3231 Boards gespeichert werden (EEPROMMER erforderlich)
+- oder im internen EEPROM des AVR (nicht möglich mit ATtiny24, jedoch bei Typen mit großem EEPROM)
+- oder im Flash des AVR gespeichert werden (beim ATtiny24 ebenfalls möglich)
+Dazu sind für jeden Monat 32 Bytes genutzt (Somit hat jeder Monat gleich viel Tage)
+
+*Die Daten gehören:*
+- ins 24C32 EEPROM ab Adresse 0
+- ins AVR interne EEPROM (Einbinden in config.h)
+- In den Flash des AVR (Einbinden in config.h)
+
+```
+-------------------------------------------------------------------------------------------
+Adresse Dezimal    Datum
+bzw. Array Index
+0-31               1.1 - 31.1 = 31 Datenbytes + 1 Füllbyte
+32-60              1.2 - 29.2 = 29 Datenbytes + 3 Füllbytes
+64-94              1.3 - 31.3 = 31 Datenbytes + 1 Füllbyte
+.
+.
+.
+352-383            1.12 - 31.12 = 31 Datenbytes + 1 Füllbyte
+-------------------------------------------------------------------------------------------
+Im Datenbyte wird gespeichert, welche LED(s) am zugehörigen Tag angesteuert werden.
+Das Bit 7 ist ohne Bedeutung
+Zuordnung Bits im Datenbyte zu LEDs:
+Bit7  Bit6  Bit5  Bit4  Bit3  Bit2  Bit1  Bit0  Datenbyte   LEDs
+NC    LED6  LED5  LED4  LED3  LED2  LED1  LED0  Binär       Ein
+-------------------------------------------------------------------------------------------
+X     1     1     1     1     1     1     1     0bX1111111  6,5,4,3,2,1,0
+X     0     0     0     0     0     0     0     0bX0000000  Keine
+X     0     1     0     1     0     1     0     0bX0101010  5,3,1
+-------------------------------------------------------------------------------------------
+Ab EEPROM Adresse Dez 384 (bzw. Array Index) müssen folgende Daten gespeichert werden:
+-------------------------------------------------------------------------------------------
+384 RTC Start Tag             (PACKED BCD FORMAT)
+385 RTC Start Monat           (PACKED BCD FORMAT)
+386 RTC Start Jahr 2-Stellig  (PACKED BCD FORMAT)
+387 RTC Start Stunde          (PACKED BCD FORMAT)
+388 RTC Start Minute          (PACKED BCD FORMAT)
+389 Weckzeit Täglich Stunde   (PACKED BCD FORMAT)
+390 Weckzeit Täglich Minute   (PACKED BCD FORMAT)
+-------------------------------------------------------------------------------------------
+RCT Startdatum/Zeit:
+  Die Zeit zu der das Gerät das ERSTE mal (nach brennen der Daten)
+  MIT gedrücktem Taster eingeschaltet wird.
+  Auf diese Zeit/Datum wird die RTC dann im Moment des
+  Einschaltens (MIT GEDRÜCKTEM TASTER) gestellt.
+
+Weckzeit Täglich:
+  Jeden Tag zu dieser Uhrzeit weckt die RTC den AVR auf.
+  Dieser prüft ob LEDs geschaltet werden müssen.
+  Falls NEIN, wird der AVR wieder schlafen gelegt.
+  Falls JA, werden die LEDs angesteuert bis:
+    - der Nutzer den Taster drückt
+      --> LEDs aus, AVR geht wieder schlafen
+    - sich das Datum geändert hat
+      --> Die LEDs werden weiterhin passend zum Datum gesteuert
+          bis Tastendruck --> AVR geht schlafen
+          oder gehen ganz aus (falls keine LED Daten für diesen Tag) --> AVR schlafen legen
+-------------------------------------------------------------------------------------------
+Die Datenbytes müssen im Packed BCD Format vorliegen... Beispiel:
+Erstmaliger Start nach brennen = 01.02.2018 - 15:00 Uhr
+Weckzeit Täglich               = 06:00 Uhr morgens
+
+Adresse Dezimal                384   385   386   387   388   389   390
+Datenbyte Hexadezimal          0x01  0x02  0x18  0x15  0x00  0x06  0x00
+-------------------------------------------------------------------------------------------
+```
+
+Zum Erstellen der EEPROM, Flash Daten kann die Datei "Abfuhrkalender.ods" genutzt werden.
+Nach Eingabe der Daten (grüner Bereich) kann man sich die automatisch erstellten
+EEPROM/Flash Daten (schwarzer Bereich) in die Zwischenablage kopieren
+und damit eine Datei zum brennen des EEPROMS auf dem DS-Board erstellen, oder diese Daten
+in der Datei "config.h" fest einbauen.
+
+Linke Tabellenseite bitte mit "1" füllen (Abholung, LED an) oder leeren mit Druck auf "ENTFERNEN" (keine Abholung LED aus)
+
+Linux Nutzer können sich die "Abfuhrkalender.ods" füllen, speichern und danach
+als CSV-Datei exportieren. Feldtrenner bitte "TAB" nutzen, Texttrenner leer lassen.
+Danach kann man sich aus dem CSV leicht eine Intel-Hex-Datei für's EEPROM 24C32 erstellen:
+```
+conv_csv_to_hex.sh Dateiname.csv > Dateiname.hex
+```
+
+### Datenspeicher = 24C32 EEPROM auf DS-Board:
+- AVR einmalig brennen, Jährlich neue Abfuhrtabelle auf EEPROM des DS-Board speichern.
+### Datenspeicher = AVR-Internes EEPROM:
+- Jährlich neue Abfuhrtabelle im AVR-EEPROM speichern.
+### Datenspeicher = AVR-Flash:
+- Jährlich Software neu erstellen mit einkompilierter Abfuhrtabelle und AVR brennen.
+
+### Jährlich zu Jahresbeginn:
+- Neuen Abfallkalender erstellen --> Abfuhrkalender.ods nutzen oder Daten selbst erzeugen
+- Neuen Abfuhrkalender im jeweiligen Speicher unterbringen
+- ggf. Batteriewechsel auf dem DS3231-Board
+- Alle Schaltungsteile wieder miteinander verbinden
+- WARTEN bis Zeit zum einschalten erreicht ist (Im obigen Beispiel 1.2.2018 15:00)
+- DANN Schaltung mit GEDRÜCKTEM Taster einschalten, 5 Sekunden gedrückt halten 
+  ALLE LEDs blinken, Datum Uhrzeit RTC wird gesetzt auf 1.2.2018 15:00
+- Schaltung vom Strom trennen und OHNE gedrückten Schalter wieder einschalten
+
+### Nach Bedarf:
+Batteriewechsel Hauptgerät:
+- Austauschen und OHNE gedrückten Taster wieder einschalten
+- Das DS-Board läuft so lange mit seiner eigenen Batterie
+Batteriewechsel DS-Board:
+- Sollte selten nötig sein, da das Board im Normalfall über die Batterie des Hauptgeräts versorgt wird
+- Verfahren wie zu Jahresbeginn, da die RTC dann gestellt werden muß
+
+### Statusblinken in Endlosschleife:
+- Alle LEDs blinken schnell: Zeitregister RTC beim Start (Knopdruck 5Sek) erfolgreich gestellt 
+- LED0 blinkt schnell: Fehler beim Zugriff auf DS3231
+- LED3 blinkt schnell: Fehler beim Zugriff auf AT23C32     
+
+### Nutzung
+Der Taster wird, wie oben bereits beschrieben, zum einmaligen stellen der RTC zu Jahresbeginn benötigt.
+Im Normalbetrieb kann der Taster betätigt werden um die LEDs auszuschalten und den AVR wieder in Tiefschlaf zu versetzten,
+sozusagen als Bestätigung "Ich hab die Tonnen rausgebracht. Bei geschickter Wahl von "Weckzeit" des AVR läßt sich somit
+die Leuchtdauer der LEDs reduzieren.
+
+### Stromverbrauch ca.
+Je nach LEDs und Vorwiderständen bei mir 3-5 mA wenn LEDs angesteuert werden und 200 µA wenn der AVR schläft.
+
