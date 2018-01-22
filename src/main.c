@@ -52,6 +52,14 @@ int main (void)
     status_blink_endless(LED_TIME_SET);
   }
 
+  // Wenn nach einschalten KEIN Tasterdruck, wird aktuelles Datum/Uhrzeit angezeigt
+  // Dazu blinken die LEDs so oft, wie das Datums/Zeit - Teilstück angibt
+  // LED0 = 5xblink, LED1 = 2xblink, LED2 = 15xblink, LED3 = 1xblink --> 5. Februar 15:01 Uhr
+  // Welche LED was anzeigt, kann in config.h angepaßt werden
+  delay_ms(3000);
+  show_date_and_time();
+  delay_ms(3000);
+
   // Normalbetrieb, Hauptschleife
   // Byte zur LED Steuerung für aktuellen Tag laden
   // Falls keine Daten für Heute 1,5 Sekunden warten, AVR schlafen legen

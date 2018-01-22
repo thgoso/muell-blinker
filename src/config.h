@@ -82,11 +82,15 @@
 
 #define KEY                   PA7                 // Taster an PA7
 
-// LED Steuerung zur Statusanzeige Zeit gestellt, Fehler DS3231, Fehler AT24C32
-// Passende LED Kombination ggf. anpassen
+// LED Steuerung zur Statusanzeige Zeit gestellt, Fehler DS3231, Fehler AT24C32, Datum/Zeitanzeige
+// Passende LED Kombinationen ggf. anpassen
 #define LED_TIME_SET          ((1<<PA0)|(1<<PA1)|(1<<PA2)|(1<<PA3)|(1<<PA4)|(1<<PA5)|(1<<PA6))
-#define LED_ERR_DS            (1<<PA0)
-#define LED_ERR_AT            (1<<PA3)
+#define LED_ERR_DS            ((1<<PA0)|(1<<PA1))
+#define LED_ERR_AT            ((1<<PA2)|(1<<PA3))
+#define LED_DATE              (1<<PA0)
+#define LED_MONTH             (1<<PA1)
+#define LED_HOUR              (1<<PA2)
+#define LED_MINUTE            (1<<PA3)
 // ---------------------------------------------------------------------------------------------------------------------
 // Hier definieren ob die jeweiligen LEDs bei Ansteuerung zur Abholanzeige
 // Blinken sollen (100ms an, 900ms aus) [Stromsparend] oder dauerleuchten sollen

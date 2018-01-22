@@ -166,6 +166,26 @@ static uint8_t check_key_pressed_900ms (void)
   }
   return FALSE;
 }
+/***********************************************************************************************************************
+* Blinkhilfsfunktion zur Anzeige von Datum/Zeit mittels LEDs
+* LEDs werden so oft an/aus geschaltet wie "pbcd_byte" angibt, danach eine Sekunde Pause
+* Während blinken KEINE Tastenabfrage
+* Übergabe: Zeitbyte im PACKED-BCD-Format
+*           LED-Byte zum steuern von LED_KEY_PORT
+***********************************************************************************************************************/
+static void blink_loop (uint8_t pbcd_byte, uint8_t led_byte)
+{
+  pbcd_to_bin(&pbcd_byte);                        // Wandeln nach normal binär
+  led_byte |= (1<<KEY);                           // Taste Pull-Up = Ein, LEDs nach Vorgabe
+
+  for ( ;pbcd_byte>0; pbcd_byte--) {
+    LED_KEY_PORT = led_byte;                      // LED-Byte anlegen
+    delay_ms(100);
+    LED_KEY_PORT = (0b00000000 | (1<<KEY));       // Alle LEDs aus, Taster interner Pull-Up = an
+    delay_ms(500);
+  }
+  delay_ms(1000);
+}
 /**********************************************************************************************************************/
 
 
@@ -334,5 +354,28 @@ uint8_t get_ledbyte_today (uint8_t *led_byte)
   *led_byte &= ~(1<<KEY);                         // KEY-PIN ausmaskieren/löschen
   if (led_byte == 0) return FALSE;
   else return TRUE;
+}
+/***********************************************************************************************************************
+* Liest aktuelles Datum (TT.MM) und Uhrzeit vom DS3231 Läßt LEDs so oft blinken wie die Zeitbytes sind
+* Keine Tastenabfrage während blinken
+*
+* z.B. es ist der 10. Febraur 15:00 Uhr
+* LED_DATE blinkt   10 mal
+* LED_MONTH blinkt   2 mal
+* LED_HOUR blink    15 mal
+* LED_MINUTE blinkt 10 mal
+***********************************************************************************************************************/
+void show_date_and_time (void)
+{
+  uint8_t tmp;
+
+  tmp=ds_read_reg(DS_DATE);
+  blink_loop(tmp, LED_DATE);
+  tmp=ds_read_reg(DS_MONTH);
+  blink_loop(tmp, LED_MONTH);
+  tmp=ds_read_reg(DS_HOURS);
+  blink_loop(tmp, LED_HOUR);
+  tmp=ds_read_reg(DS_MINUTES);
+  blink_loop(tmp, LED_MINUTE);
 }
 /**********************************************************************************************************************/

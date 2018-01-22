@@ -46,6 +46,10 @@ void set_rtc (void);
 // Immer aufrufen bevor der AVR schlafen geht
 void set_daily_alarm (void);
 // ---------------------------------------------------------------------------------------------------------------------
+// Holt aktuelles Datum/Uhrzeit aus DS3231 und läßt LEDs danach blinken
+// Keine Tasterabfrage zwischendurch
+void show_date_and_time (void);
+// ---------------------------------------------------------------------------------------------------------------------
 // Prüft ob Taste durchgehend 5 Sekunden gedrückt
 // Gibt TRUE zurück falls Ja, sonst FALSE
 uint8_t check_key_pressed_5s (void);
