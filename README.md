@@ -157,5 +157,4 @@ die Leuchtdauer der LEDs reduzieren.
 ![Bild](https://github.com/thgoso/muell-blinker/blob/master/infos/Testaufbau.jpg)
 
 ### Stromverbrauch ca.
-Je nach LEDs und Vorwiderständen bei mir 3-5 mA wenn LEDs angesteuert werden und 200 µA wenn der AVR schläft.
-
+Je nach LEDs und Vorwiderständen bei mir 3-5 mA wenn LEDs angesteuert werden und 150 µA wenn der AVR schläft. Auf dem DS-Board wurde die rote Power-On-LED entfernt.
