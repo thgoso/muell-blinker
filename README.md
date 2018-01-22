@@ -6,8 +6,12 @@
 - Taster
 - max. 7 LEDs
 
+![Bild](https://github.com/thgoso/muell-blinker/blob/master/infos/DS3231-Board.jpg)
+
 ## Verwendung:
 Zeigt mittels blinkender LED(s) an daß die Müllabfuhr kommt und welche Tonne(n) an die Straße gebracht werden müssen.
+
+![Bild](https://github.com/thgoso/muell-blinker/blob/master/schaltung/Schaltung.jpg)
 
 ## Daten erstellen:
 Mittels Datei "Abfuhrkalender.ods" im Ordner infos oder selbst erzeugen.
@@ -135,6 +139,8 @@ Der Taster wird, wie oben bereits beschrieben, zum einmaligen stellen der RTC zu
 Im Normalbetrieb kann der Taster betätigt werden um die LEDs auszuschalten und den AVR wieder in Tiefschlaf zu versetzten,
 sozusagen als Bestätigung "Ich hab die Tonnen rausgebracht. Bei geschickter Wahl von "Weckzeit" des AVR läßt sich somit
 die Leuchtdauer der LEDs reduzieren.
+
+![Bild](https://github.com/thgoso/muell-blinker/blob/master/infos/Testaufbau.jpg)
 
 ### Stromverbrauch ca.
 Je nach LEDs und Vorwiderständen bei mir 3-5 mA wenn LEDs angesteuert werden und 200 µA wenn der AVR schläft.
