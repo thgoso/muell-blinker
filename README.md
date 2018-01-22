@@ -46,43 +46,50 @@ Das Bit 7 ist ohne Bedeutung. Zuordnung Bits im Datenbyte zu LEDs:
 
 Ab EEPROM Adresse Dez 384 (bzw. Array Index) müssen folgende Daten gespeichert werden:
 
-| Byte                         | Format     |
-| ---------------------------- |----------- |
-| 384 RTC Start Tag            | PACKED BCD |
-| 385 RTC Start Monat          | PACKED BCD |
-| 386 RTC Start Jahr 2-Stellig | PACKED BCD |
-| 387 RTC Start Stunde         | PACKED BCD |
-| 388 RTC Start Minute         | PACKED BCD |
-| 389 Weckzeit Täglich Stunde  | PACKED BCD |
-| 390 Weckzeit Täglich Minute  | PACKED BCD |
+| Adresse | Byte                     | Format     |
+| ------- | ------------------------ |----------- |
+| 384     | RTC Start Tag            | PACKED BCD |
+| 385     | RTC Start Monat          | PACKED BCD |
+| 386     | RTC Start Jahr 2-Stellig | PACKED BCD |
+| 387     | RTC Start Stunde         | PACKED BCD |
+| 388     | RTC Start Minute         | PACKED BCD |
+| 389     | Weckzeit Täglich Stunde  | PACKED BCD |
+| 390     | Weckzeit Täglich Minute  | PACKED BCD |
 
-```
-RCT Startdatum/Zeit:
-  Die Zeit zu der das Gerät das ERSTE mal (nach brennen der Daten)
-  MIT gedrücktem Taster eingeschaltet wird.
-  Auf diese Zeit/Datum wird die RTC dann im Moment des
-  Einschaltens (MIT GEDRÜCKTEM TASTER) gestellt.
 
-Weckzeit Täglich:
-  Jeden Tag zu dieser Uhrzeit weckt die RTC den AVR auf.
-  Dieser prüft ob LEDs geschaltet werden müssen.
-  Falls NEIN, wird der AVR wieder schlafen gelegt.
-  Falls JA, werden die LEDs angesteuert bis:
-    - der Nutzer den Taster drückt
-      --> LEDs aus, AVR geht wieder schlafen
-    - sich das Datum geändert hat
-      --> Die LEDs werden weiterhin passend zum Datum gesteuert
-          bis Tastendruck --> AVR geht schlafen
-          oder gehen ganz aus (falls keine LED Daten für diesen Tag) --> AVR schlafen legen
--------------------------------------------------------------------------------------------
+### RTC Startdatum/Zeit:
+Die Zeit zu der das Gerät das ERSTE mal (nach brennen der Daten) MIT gedrücktem Taster eingeschaltet wird.
+Auf diese Zeit/Datum wird die RTC dann im Moment des Einschaltens (MIT GEDRÜCKTEM TASTER) gestellt.
+
+
+### Weckzeit Täglich:
+Jeden Tag zu dieser Uhrzeit weckt die RTC den AVR auf. Dieser prüft ob LEDs geschaltet werden müssen.
+Falls NEIN, wird der AVR wieder schlafen gelegt. Falls JA, werden die LEDs angesteuert bis:
+
+1. Der Nutzer den Taster drückt
+   - LEDs aus, AVR geht schlafen
+2. Sich das Datum geändert hat
+   - Die LEDs werden weiterhin passend zum Datum gesteuert
+     - bis Tastendruck
+       - LEDs aus, AVR geht schlafen
+   - falls keine LED Daten für diesen Tag, AVR schlafen legen
+   
 Die Datenbytes müssen im Packed BCD Format vorliegen... Beispiel:
-Erstmaliger Start nach brennen = 01.02.2018 - 15:00 Uhr
-Weckzeit Täglich               = 06:00 Uhr morgens
 
-Adresse Dezimal                384   385   386   387   388   389   390
-Datenbyte Hexadezimal          0x01  0x02  0x18  0x15  0x00  0x06  0x00
--------------------------------------------------------------------------------------------
-```
+Erstmaliger Start nach brennen = 01.02.2018 - 15:00 Uhr
+
+Weckzeit AVR täglich = 06:00 Uhr
+
+| Adresse | Byte   |
+| ------- | ------ |
+| *Dez.*  | *Hex.* |
+| 384     | 0x01   |
+| 385     | 0x02   |
+| 386     | 0x18   |
+| 387     | 0x15   |
+| 388     | 0x00   |
+| 389     | 0x06   |
+| 390     | 0x00   |
 
 Zum Erstellen der EEPROM, Flash Daten kann die Datei "Abfuhrkalender.ods" genutzt werden.
 Nach Eingabe der Daten (grüner Bereich) kann man sich die automatisch erstellten
