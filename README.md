@@ -23,19 +23,18 @@ Dazu sind für jeden Monat 32 Bytes genutzt (Somit hat jeder Monat gleich viel T
 - ins AVR interne EEPROM (Einbinden in config.h)
 - In den Flash des AVR (Einbinden in config.h)
 
-|-----------------|--------------------------------------------|
-|Adresse Dezimal  | Datum                                      |
-|bzw. Array Index |                                            |
-|0-31             | 1.1 - 31.1 = 31 Datenbytes + 1 Füllbyte    |
-|32-60            | 1.2 - 29.2 = 29 Datenbytes + 3 Füllbytes   |
-|64-94            | 1.3 - 31.3 = 31 Datenbytes + 1 Füllbyte    |
-|.                |                                            |
-|.                |                                            |
-|.                |                                            |
-|352-383          |  1.12 - 31.12 = 31 Datenbytes + 1 Füllbyte |
-|-----------------|--------------------------------------------|
-
 ```
+-------------------------------------------------------------------------------------------
+Adresse Dezimal    Datum
+bzw. Array Index
+0-31               1.1 - 31.1 = 31 Datenbytes + 1 Füllbyte
+32-60              1.2 - 29.2 = 29 Datenbytes + 3 Füllbytes
+64-94              1.3 - 31.3 = 31 Datenbytes + 1 Füllbyte
+.
+.
+.
+352-383            1.12 - 31.12 = 31 Datenbytes + 1 Füllbyte
+-------------------------------------------------------------------------------------------
 Im Datenbyte wird gespeichert, welche LED(s) am zugehörigen Tag angesteuert werden.
 Das Bit 7 ist ohne Bedeutung
 Zuordnung Bits im Datenbyte zu LEDs:
