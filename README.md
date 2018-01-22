@@ -80,9 +80,9 @@ Erstmaliger Start nach brennen = 01.02.2018 - 15:00 Uhr
 
 Weckzeit AVR täglich = 06:00 Uhr
 
-| Adresse Dezimal | 384  | 385  | 386  | 387  | 388  | 389  | 390  |
-| --------------- | ---- | ---- | ---- | ---- | ---- | ---- | ---- |
-| Byte Binär      | 0x01 | 0x02 | 0x18 | 0x15 | 0x00 | 0x06 | 0x00 |
+| Adresse Dezimal  | 384  | 385  | 386  | 387  | 388  | 389  | 390  |
+| ---------------- | ---- | ---- | ---- | ---- | ---- | ---- | ---- |
+| Byte Hexadizimal | 0x01 | 0x02 | 0x18 | 0x15 | 0x00 | 0x06 | 0x00 |
 
 Zum Erstellen der EEPROM, Flash Daten kann die Datei "Abfuhrkalender.ods" genutzt werden.
 Nach Eingabe der Daten (grüner Bereich) kann man sich die automatisch erstellten
