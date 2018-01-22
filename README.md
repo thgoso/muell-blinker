@@ -72,7 +72,8 @@ Falls NEIN, wird der AVR wieder schlafen gelegt. Falls JA, werden die LEDs anges
    - Die LEDs werden weiterhin passend zum Datum gesteuert
      - bis Tastendruck
        - LEDs aus, AVR geht schlafen
-   - falls keine LED Daten für diesen Tag, AVR schlafen legen
+   - falls keine LED Daten für diesen Tag
+     - AVR schlafen legen
    
 Die Datenbytes müssen im Packed BCD Format vorliegen... Beispiel:
 
