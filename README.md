@@ -122,10 +122,11 @@ conv_csv_to_hex.sh Dateiname.csv > Dateiname.hex
 - Schaltung vom Strom trennen und OHNE gedrückten Schalter wieder einschalten
 
 ### Nach Bedarf:
-Batteriewechsel Hauptgerät:
+**Batteriewechsel Hauptgerät:**
 - Austauschen und OHNE gedrückten Taster wieder einschalten
 - Das DS-Board läuft so lange mit seiner eigenen Batterie
-Batteriewechsel DS-Board:
+
+**Batteriewechsel DS-Board:**
 - Sollte selten nötig sein, da das Board im Normalfall über die Batterie des Hauptgeräts versorgt wird
 - Verfahren wie zu Jahresbeginn, da die RTC dann gestellt werden muß
 
