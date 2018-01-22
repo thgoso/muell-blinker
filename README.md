@@ -23,38 +23,40 @@ Dazu sind für jeden Monat 32 Bytes genutzt (Somit hat jeder Monat gleich viel T
 - ins AVR interne EEPROM (Einbinden in config.h)
 - In den Flash des AVR (Einbinden in config.h)
 
-```
--------------------------------------------------------------------------------------------
-Adresse Dezimal    Datum
-bzw. Array Index
-0-31               1.1 - 31.1 = 31 Datenbytes + 1 Füllbyte
-32-60              1.2 - 29.2 = 29 Datenbytes + 3 Füllbytes
-64-94              1.3 - 31.3 = 31 Datenbytes + 1 Füllbyte
-.
-.
-.
-352-383            1.12 - 31.12 = 31 Datenbytes + 1 Füllbyte
--------------------------------------------------------------------------------------------
+| Adresse/Index Dezimal | Datum                                     |
+| --------------------- | ----------------------------------------- |
+| 0-31                  | 1.1 - 31.1 = 31 Datenbytes + 1 Füllbyte   |
+| 32-60                 | 1.2 - 29.2 = 29 Datenbytes + 3 Füllbytes  |
+| 64-94                 | 1.3 - 31.3 = 31 Datenbytes + 1 Füllbyte   |
+| .                     | .                                         |
+| .                     | .                                         |
+| .                     | .                                         |
+| 352-383               | 1.12 - 31.12 = 31 Datenbytes + 1 Füllbyte |
+
 Im Datenbyte wird gespeichert, welche LED(s) am zugehörigen Tag angesteuert werden.
-Das Bit 7 ist ohne Bedeutung
-Zuordnung Bits im Datenbyte zu LEDs:
-Bit7  Bit6  Bit5  Bit4  Bit3  Bit2  Bit1  Bit0  Datenbyte   LEDs
-NC    LED6  LED5  LED4  LED3  LED2  LED1  LED0  Binär       Ein
--------------------------------------------------------------------------------------------
-X     1     1     1     1     1     1     1     0bX1111111  6,5,4,3,2,1,0
-X     0     0     0     0     0     0     0     0bX0000000  Keine
-X     0     1     0     1     0     1     0     0bX0101010  5,3,1
--------------------------------------------------------------------------------------------
+Das Bit 7 ist ohne Bedeutung. Zuordnung Bits im Datenbyte zu LEDs:
+
+| Bit7 | Bit6   | Bit5   | Bit4   | Bit3   | Bit2   | Bit1   | Bit0   | Datenbyte  | LEDs          |
+| ---- | ------ | ------ | ------ | ------ | ------ | ------ | ------ | ---------- | ------------- |
+| *NC* | *LED6* | *LED5* | *LED4* | *LED3* | *LED2* | *LED1* | *LED0* | *Binär*    | *Ein*         |
+| X    | 1      | 1      | 1      | 1      | 1      | 1      | 1      | 0bX1111111 | 6,5,4,3,2,1,0 |
+| X    | 0      | 0      | 0      | 0      | 0      | 0      | 0      | 0bX0000000 | Keine         |
+| X    | 0      | 1      | 0      | 1      | 0      | 1      | 0      | 0bX0101010 | 5,3,1         |
+
+
 Ab EEPROM Adresse Dez 384 (bzw. Array Index) müssen folgende Daten gespeichert werden:
--------------------------------------------------------------------------------------------
-384 RTC Start Tag             (PACKED BCD FORMAT)
-385 RTC Start Monat           (PACKED BCD FORMAT)
-386 RTC Start Jahr 2-Stellig  (PACKED BCD FORMAT)
-387 RTC Start Stunde          (PACKED BCD FORMAT)
-388 RTC Start Minute          (PACKED BCD FORMAT)
-389 Weckzeit Täglich Stunde   (PACKED BCD FORMAT)
-390 Weckzeit Täglich Minute   (PACKED BCD FORMAT)
--------------------------------------------------------------------------------------------
+
+| Byte                         | Format     |
+| ---------------------------- |----------- |
+| 384 RTC Start Tag            | PACKED BCD |
+| 385 RTC Start Monat          | PACKED BCD |
+| 386 RTC Start Jahr 2-Stellig | PACKED BCD |
+| 387 RTC Start Stunde         | PACKED BCD |
+| 388 RTC Start Minute         | PACKED BCD |
+| 389 Weckzeit Täglich Stunde  | PACKED BCD |
+| 390 Weckzeit Täglich Minute  | PACKED BCD |
+
+```
 RCT Startdatum/Zeit:
   Die Zeit zu der das Gerät das ERSTE mal (nach brennen der Daten)
   MIT gedrücktem Taster eingeschaltet wird.
