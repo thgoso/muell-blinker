@@ -130,9 +130,23 @@ Batteriewechsel DS-Board:
 - Verfahren wie zu Jahresbeginn, da die RTC dann gestellt werden muß
 
 ### Statusblinken in Endlosschleife:
-- Alle LEDs blinken schnell: Zeitregister RTC beim Start (Knopdruck 5Sek) erfolgreich gestellt 
-- LED0 blinkt schnell: Fehler beim Zugriff auf DS3231
-- LED3 blinkt schnell: Fehler beim Zugriff auf AT23C32     
+*100ms an / 233ms aus*
+- Alle LEDs: Zeitregister RTC beim Start (Knopdruck 5Sek) erfolgreich gestellt 
+- LED0 & LED1: Fehler beim Zugriff auf DS3231
+- LED2 & LED3: Fehler beim Zugriff auf AT23C32     
+
+### Blinkanzeige nach Start OHNE Tasterdruck:
+*100ms an / 500ms aus*
+- Datum & Uhrzeit werden angezeigt
+  - LED0 blinkt 20 mal
+  - LED1 blinkt 10 mal
+  - LED2 blinkt 15 mal
+  - LED3 blinkt 25 mal
+- Es ist der 20. Oktober, 15:25 Uhr
+ 
+### Normalblinken
+*100ms an / 900ms aus*
+- Die LEDs zeigen welche Tonnen vor die Tür müssen
 
 ### Nutzung
 Der Taster wird, wie oben bereits beschrieben, zum einmaligen stellen der RTC zu Jahresbeginn benötigt.
