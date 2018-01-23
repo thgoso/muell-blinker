@@ -186,6 +186,17 @@ static void blink_loop (uint8_t pbcd_byte, uint8_t led_byte)
   }
   delay_ms(1000);
 }
+/***********************************************************************************************************************
+* Prüft ob im DS3231 der Oszillator gestoppt wurde. (Bit7 in S_SREG gesetzt)
+* Falls ja ist die Knopfzelle auf dem Board wahrscheinlich leer und der DS kann das Datum/Zeit nicht "behalten"
+* Funktion aufrufen bevor irgendwelche Zeitregister gelesen werden um sicher zu gehen daß die Zeiten stimmen
+* Rückgabe: TRUE wenn Oszillator läuft, FALSE im Fehlerfall
+***********************************************************************************************************************/
+static uint8_t ds_check_running (void)
+{
+  if ((ds_read_reg(DS_SREG) & 0b10000000) != 0) return FALSE;
+  return TRUE;
+}
 /**********************************************************************************************************************/
 
 
@@ -265,7 +276,7 @@ uint8_t led_blink_10min (uint8_t led_byte)
     LED_KEY_PORT = led_byte;                      // LEDs einschalten (KEY ist gesetzt/High... Pull-Up)
     delay_ms(100);                                // 100ms aufblitzen
 #if LED_MODE == MODE_BLINK
-    LED_KEY_PORT = (0b00000000 | (1<<KEY));       // Alle wieder auss, 900ms aus lassen, Taster abfragen
+    LED_KEY_PORT = (0b00000000 | (1<<KEY));       // Alle wieder aus, 900ms aus lassen, Taster abfragen
 #endif
     if (check_key_pressed_900ms() == TRUE) {
       return FALSE;                               // Falls Taster gedrück, abbruch mit FALSE
@@ -292,6 +303,8 @@ void set_rtc (void)
   ds_write_reg(DS_MONTH, tmp);
   tmp = load_data_byte(ADR_RTC_START_YEAR);
   ds_write_reg(DS_YEAR, tmp);
+  // DS_SREG komplett zurücksetzten
+  ds_write_reg(DS_SREG, 0b00000000);
 }
 /***********************************************************************************************************************
 * Läd Tägliche Weckzeit aus dem externen EEPROM oder internen EEPROM oder Flash und setzt den täglichen Alarm neu
@@ -322,7 +335,7 @@ void set_daily_alarm (void)
   ds_write_reg(DS_ALRM1_HOURS, hour);
   ds_write_reg(DS_ALRM1_DATE, 0b10000000);
 
-  // Einschalten Alarm1, Ausschalten Alarm2 INT/SQW Modus setzten
+  // Einschalten Alarm1-INT, Ausschalten Alarm2-INT, Modus-SQW/INT setzten auf INT
   ds_write_reg(DS_CNTRL, 0b01000101);
   // Alarm-Statusflags in SREG zurücksetzten
   ds_write_reg(DS_SREG, 0b00000000);
@@ -340,6 +353,10 @@ uint8_t get_ledbyte_today (uint8_t *led_byte)
 {
   uint8_t day, month;
   uint16_t adr;
+
+  if (ds_check_running() == FALSE) {
+    status_blink_endless(LED_ERR_TIMEKEEPING);    // Fehler Timekeeping / Oszillator wurde gestoppt
+  }
 
   day = ds_read_reg(DS_DATE);                     // Datum vom DS abholen
   month = ds_read_reg(DS_MONTH);                  // Format = PACKED BCD
@@ -359,7 +376,7 @@ uint8_t get_ledbyte_today (uint8_t *led_byte)
 * Liest aktuelles Datum (TT.MM) und Uhrzeit vom DS3231 Läßt LEDs so oft blinken wie die Zeitbytes sind
 * Keine Tastenabfrage während blinken
 *
-* z.B. es ist der 10. Febraur 15:00 Uhr
+* z.B. es ist der 10. Febraur 15:10 Uhr
 * LED_DATE blinkt   10 mal
 * LED_MONTH blinkt   2 mal
 * LED_HOUR blink    15 mal
@@ -368,6 +385,10 @@ uint8_t get_ledbyte_today (uint8_t *led_byte)
 void show_date_and_time (void)
 {
   uint8_t tmp;
+
+  if (ds_check_running() == FALSE) {
+    status_blink_endless(LED_ERR_TIMEKEEPING);    // Fehler Timekeeping / Oszillator wurde gestoppt
+  }
 
   tmp=ds_read_reg(DS_DATE);
   blink_loop(tmp, LED_DATE);
