@@ -140,10 +140,6 @@ conv_csv_to_hex.sh Dateiname.csv > Dateiname.hex
 - LED2 & LED3: Fehler beim Zugriff auf AT23C32
   - Slave Adresse in config.h falsch
   - AT24C32 defekt
-- LED1 & LED2: DS3231 hat die Zeit "vergessen"
-  - Bei fabrikneuem Board vergessen die Zeit zu stellen
-  - Knopfzelle auf DS-Board leer
-  - Board defekt
 
 ### Blinkanzeige nach Start OHNE Tasterdruck:
 *100ms an / 500ms aus*
