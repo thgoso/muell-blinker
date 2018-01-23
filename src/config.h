@@ -88,7 +88,6 @@
 // Fehler Kommunikation mit DS3231, Fehler Kommunikation mit AT24C32, Fehler Timekeeping-Register DS3231
 #define LED_ERR_DS            ((1<<PA0)|(1<<PA1))
 #define LED_ERR_AT            ((1<<PA2)|(1<<PA3))
-#define LED_ERR_TIMEKEEPING   ((1<<PA1)|(1<<PA2))
 // LEDs zur Datum/Zeitanzeige
 #define LED_DATE              (1<<PA0)
 #define LED_MONTH             (1<<PA1)

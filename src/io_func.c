@@ -70,11 +70,6 @@
 
 
 
-
-
-
-
-
 // Private Funktionen
 /***********************************************************************************************************************
 * Funktion zum lesen von Datenbyte Adresse/Index 0-390
@@ -186,23 +181,7 @@ static void blink_loop (uint8_t pbcd_byte, uint8_t led_byte)
   }
   delay_ms(1000);
 }
-/***********************************************************************************************************************
-* Prüft ob im DS3231 der Oszillator gestoppt wurde. (Bit7 in S_SREG gesetzt)
-* Falls ja ist die Knopfzelle auf dem Board wahrscheinlich leer und der DS kann das Datum/Zeit nicht "behalten"
-* Funktion aufrufen bevor irgendwelche Zeitregister gelesen werden um sicher zu gehen daß die Zeiten stimmen
-* Rückgabe: TRUE wenn Oszillator läuft, FALSE im Fehlerfall
-***********************************************************************************************************************/
-static uint8_t ds_check_running (void)
-{
-  if ((ds_read_reg(DS_SREG) & 0b10000000) != 0) return FALSE;
-  return TRUE;
-}
 /**********************************************************************************************************************/
-
-
-
-
-
 
 
 
@@ -354,10 +333,6 @@ uint8_t get_ledbyte_today (uint8_t *led_byte)
   uint8_t day, month;
   uint16_t adr;
 
-  if (ds_check_running() == FALSE) {
-    status_blink_endless(LED_ERR_TIMEKEEPING);    // Fehler Timekeeping / Oszillator wurde gestoppt
-  }
-
   day = ds_read_reg(DS_DATE);                     // Datum vom DS abholen
   month = ds_read_reg(DS_MONTH);                  // Format = PACKED BCD
   pbcd_to_bin(&day);                              // Beide wandeln PBCD --> Binär
@@ -385,10 +360,6 @@ uint8_t get_ledbyte_today (uint8_t *led_byte)
 void show_date_and_time (void)
 {
   uint8_t tmp;
-
-  if (ds_check_running() == FALSE) {
-    status_blink_endless(LED_ERR_TIMEKEEPING);    // Fehler Timekeeping / Oszillator wurde gestoppt
-  }
 
   tmp=ds_read_reg(DS_DATE);
   blink_loop(tmp, LED_DATE);
