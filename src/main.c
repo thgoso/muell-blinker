@@ -38,58 +38,71 @@
 *                        - oder im internen EEPROM des AVR (für andere AVR-Typen mit größerem EEPROM)
 *                          in "config.h" wählbar
 ***********************************************************************************************************************/
+
+
+
+
+
+
+/***********************************************************************************************************************
+* INT0 IRQ wird nur für's aufwachen benötigt
+***********************************************************************************************************************/
+EMPTY_INTERRUPT (INT0_vect)
+/**********************************************************************************************************************/
 int main (void)
 {
-  uint8_t  led_byte;
+  pbcd_date_time_t date_time;
+  uint8_t          led_byte;
 
   // Init IO-Ports, I2C-Bus
   init_ioports();
 
-  // Wenn Taste beim einschalten 5 Sek gedrückt --> Start Uhrzeit aus ext.EEPROM/int.EEPROM/Flash laden und RTC stellen
+  // Wenn beim beim einschalten Taste 5 Sek gedrückt
+  // Start Uhrzeit aus ext.EEPROM/int.EEPROM/Flash laden und RTC stellen
   // In Dauerschleife StatusLED für "Zeit gesetzt" schnell blinken lassen
-  if (check_key_pressed_5s() == TRUE) {
-    set_rtc();
-    status_blink_endless(LED_TIME_SET);
-  }
+  set_rtc_on_keypress();
 
   // Wenn nach einschalten KEIN Tasterdruck, wird aktuelles Datum/Uhrzeit angezeigt
   // Dazu blinken die LEDs so oft, wie das Datums/Zeit - Teilstück angibt
   // LED0 = 5xblink, LED1 = 2xblink, LED2 = 15xblink, LED3 = 1xblink --> 5. Februar 15:01 Uhr
   // Welche LED was anzeigt, kann in config.h angepaßt werden
-  delay_ms(3000);
-  show_date_and_time();
-  delay_ms(3000);
+  // INT0 IRQ bei Low Pegel an INT0
+  get_date_and_time(&date_time);
+  show_date_and_time(&date_time);
+  GIMSK = 0b01000000;
 
   // Normalbetrieb, Hauptschleife
   // Byte zur LED Steuerung für aktuellen Tag laden
-  // Falls keine Daten für Heute 1,5 Sekunden warten, AVR schlafen legen
-  // Falls Daten, LEDs 10 Minuten ansteuern, bei Abbruch durch Tastendruck, AVR schlafen legen
+  // Falls Daten für Heute vorhanden:
+  //   LEDs 10 Minuten ansteuern, bei Abbruch durch Tastendruck, AVR bis 01:30 schlafen legen
+  //   Falls es nach 23:59 Uhr ist (Stunde == 0), AVR bis 01:30 schlafen legen
+  // Falls keine Daten für Heute, AVR bis 01:30 schlafen legen
   while (1) {
     while (1) {
-      if (get_ledbyte_today(&led_byte) == FALSE) {
-        delay_ms(1500);
-        break;
-      }
-      else {
-        if (led_blink_10min(led_byte) == FALSE) break;
-      }
-    }
+      get_date_and_time(&date_time);                        // Aktuelles Datum/Uhrzeit laden
+      if (date_time.time.hour==0x00) break;                 // schlafen bis 01:30 wenn Stunde == 0
+      led_byte = get_ledbyte_for_date(&date_time.date);     // LED-Byte für aktuelles Datum laden
+      if (led_byte == 0) break;                             // schlafen bis 01:30 wenn für heute keine LED-Daten
+      if (led_blink_10min(led_byte) == KEY_PRESSED) break;  // LEDs 10 Minuten ansteuern
+    }                                                       // schlafen bis 01:30 falls zwischendurch Tasterdruck
 
-    set_daily_alarm();                            // RTC Alarm einschalten (nächster Tag Weckzeit)
-    GIMSK = 0b01000000;                           // INT0 IRQ bei Low Pegel an INT0
-    sei();                                        // IRQ Freigabe (zum aufwachen durch Low an INT0)
-    set_sleep_mode(SLEEP_MODE_PWR_DOWN);          // AVR Tiefschlaf, wecken durch IRQ INT0 (generiert vom DS3231)
-    sleep_mode();                                 // Gute Nacht AVR!
-    cli();                                        // Guten Morgen AVR! --> Statt Zähne putzen, weitere IRQs verbieten,
-  }                                               // da der DS weiterhin INT0 auf Low zieht
+    // schlafen bis 01:30
+    date_time.time.hour = 0x01;                             // Weckzeit stellen
+    date_time.time.minute = 0x30;                           // Format PBCD
+    set_alarm_time(&date_time.time);                        // Aufwachen um 01:30
+    sei();                                                  // IRQ Freigabe (zum aufwachen durch Low an INT0)
+    set_sleep_mode(SLEEP_MODE_PWR_DOWN);                    // AVR Tiefschlaf, wecken durch IRQ generiert vom DS3231
+    sleep_mode();                                           // Gute Nacht AVR!
+    // Weckzeit 01:30 erreicht
+    cli();                                                  // IRQs verbieten, da der DS weiterhin INT0 auf Low zieht
+    get_date_and_time(&date_time);                          // Aktuelles Datum/Uhrzeit laden
+    switch_time_on_switchdate_1_30(&date_time.date);        // bei Bedarf Stunde umstellen ME(S)Z auf 0 oder 2
+    get_daily_wakeup_time(&date_time.time);                 // Tägliche Weckzeit aus EEPROM/Flash laden
+    set_alarm_time(&date_time.time);                        // Aufwachen zur täglichen Weckzeit
+    sei();                                                  // IRQ Freigabe (zum aufwachen durch Low an INT0)
+    set_sleep_mode(SLEEP_MODE_PWR_DOWN);                    // AVR Tiefschlaf, wecken durch IRQ generiert vom DS3231
+    sleep_mode();                                           // Gute Nacht AVR!
+    // Tägliche Weckzeit erreicht
+    cli();                                                  // IRQs verbieten, da der DS weiterhin INT0 auf Low zieht
+  }
 }
-/***********************************************************************************************************************
-* Einsprung nach Aufwachen durch INT0 IRQ
-* Da nix weiter gemacht wird, muß kein SREG / Register gepusht, gepopt werden
-***********************************************************************************************************************/
-ISR (INT0_vect, ISR_NAKED)
-{
-  asm ("reti");
-}
-/**********************************************************************************************************************/
-
