@@ -16,13 +16,13 @@ Zeigt mittels blinkender LED(s) an daß die Müllabfuhr kommt und welche Tonne(n
 ## Daten erstellen:
 Mittels Datei "Abfuhrkalender.ods" im Ordner infos oder selbst erzeugen.
 
-*Abfuhrdaten müssen:* 
+**Abfuhrdaten müssen:** 
 - Entweder im EEPROM (24C32) des DS3231 Boards gespeichert werden (EEPROMMER erforderlich)
 - oder im internen EEPROM des AVR (nicht möglich mit ATtiny24, jedoch bei Typen mit großem EEPROM)
 - oder im Flash des AVR gespeichert werden (beim ATtiny24 ebenfalls möglich)
 Dazu sind für jeden Monat 32 Bytes genutzt (Somit hat jeder Monat gleich viel Tage)
 
-*Die Daten gehören:*
+**Die Daten gehören:**
 - ins 24C32 EEPROM ab Adresse 0
 - ins AVR interne EEPROM (Einbinden in config.h)
 - In den Flash des AVR (Einbinden in config.h)
@@ -50,44 +50,48 @@ Das Bit 7 ist ohne Bedeutung. Zuordnung Bits im Datenbyte zu LEDs:
 
 Ab EEPROM Adresse Dez 384 (bzw. Array Index) müssen folgende Daten gespeichert werden:
 
-| Adresse | Byte                     | Format     |
-| ------- | ------------------------ |----------- |
-| 384     | RTC Start Tag            | PACKED BCD |
-| 385     | RTC Start Monat          | PACKED BCD |
-| 386     | RTC Start Jahr 2-Stellig | PACKED BCD |
-| 387     | RTC Start Stunde         | PACKED BCD |
-| 388     | RTC Start Minute         | PACKED BCD |
-| 389     | Weckzeit Täglich Stunde  | PACKED BCD |
-| 390     | Weckzeit Täglich Minute  | PACKED BCD |
+| Adresse | Byte                       | Format     |
+| ------- | -------------------------- | ---------- |
+| 384     | RTC Start Tag              | PACKED BCD |
+| 385     | RTC Start Monat            | PACKED BCD |
+| 386     | RTC Start Jahr 2-Stellig   | PACKED BCD |
+| 387     | RTC Start Stunde           | PACKED BCD |
+| 388     | RTC Start Minute           | PACKED BCD |
+| 389     | Weckzeit Täglich Stunde    | PACKED BCD |
+| 390     | Weckzeit Täglich Minute    | PACKED BCD |
+| 391     | Tag Zeitumstellung März    | PACKED BCD |
+| 392     | Tag Zeitumstellung Oktober | PACKED BCD |
 
+**RTC Startdatum/Zeit:**
 
-### RTC Startdatum/Zeit:
 Die Zeit zu der das Gerät das ERSTE mal (nach brennen der Daten) MIT gedrücktem Taster eingeschaltet wird.
 Auf diese Zeit/Datum wird die RTC dann im Moment des Einschaltens (MIT GEDRÜCKTEM TASTER) gestellt.
 
+**Weckzeit Täglich:**
 
-### Weckzeit Täglich:
-Jeden Tag zu dieser Uhrzeit weckt die RTC den AVR auf. Dieser prüft ob LEDs geschaltet werden müssen.
-Falls NEIN, wird der AVR wieder schlafen gelegt. Falls JA, werden die LEDs angesteuert bis:
+Möglicher Bereich: 03:00 Uhr bis 23:00 Uhr.
 
-1. Der Nutzer den Taster drückt
-   - LEDs aus, AVR geht schlafen
-2. Sich das Datum geändert hat
-   - Die LEDs werden weiterhin passend zum Datum gesteuert
-     - bis Tastendruck
-       - LEDs aus, AVR geht schlafen
-   - falls keine LED Daten für diesen Tag
-     - AVR schlafen legen
-   
+Jeden Tag zu dieser Uhrzeit weckt die RTC den AVR auf. Dieser steuert ggf. die LEDs an.
+
+**Zeitumstellung ME(S)Z:**
+
+Der Tag im März und Oktober an dem die Uhren umgestellt werden.
+
+**Format Bytes:**
+
 Die Datenbytes müssen im Packed BCD Format vorliegen... Beispiel:
 
 Erstmaliger Start nach brennen = 01.02.2018 - 15:00 Uhr
 
 Weckzeit AVR täglich = 06:00 Uhr
 
-| Adresse Dezimal  | 384  | 385  | 386  | 387  | 388  | 389  | 390  |
-| ---------------- | ---- | ---- | ---- | ---- | ---- | ---- | ---- |
-| Byte Hexadezimal | 0x01 | 0x02 | 0x18 | 0x15 | 0x00 | 0x06 | 0x00 |
+Zeitumstellung MEZ > MESZ = 25. März
+
+Zeitumstellung MESZ > MEZ = 28. Oktober
+
+| Adresse Dezimal  | 384  | 385  | 386  | 387  | 388  | 389  | 390  | 391  | 392  |
+| ---------------- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- |
+| Byte Hexadezimal | 0x01 | 0x02 | 0x18 | 0x15 | 0x00 | 0x06 | 0x00 | 0x25 | 0x28 |
 
 Zum Erstellen der EEPROM, Flash Daten kann die Datei "Abfuhrkalender.ods" genutzt werden.
 Nach Eingabe der Daten (grüner Bereich) kann man sich die automatisch erstellten
@@ -129,6 +133,19 @@ conv_csv_to_hex.sh Dateiname.csv > Dateiname.hex
 **Batteriewechsel DS-Board:**
 - Sollte selten nötig sein, da das Board im Normalfall über die Batterie des Hauptgeräts versorgt wird
 - Verfahren wie zu Jahresbeginn, da die RTC dann gestellt werden muß
+
+### Programmablauf:
+1. AVR wird täglich vom DS3231 zur Weckzeit geweckt.
+   - Falls LED-Daten zum Datum hinterlegt
+     - LEDs passend zum Datum ansteuern bis:
+       - Es ca. 00:00 Uhr geworden ist oder Nutzer den Taster drückt
+         - LEDs aus, AVR geht bis 01:30 Uhr schlafen
+   - Falls heute keine LEDs gesteuert werden müssen
+     - LEDs aus, AVR geht bis 01:30 Uhr schlafen
+2. AVR wird jede Nacht um 01:30 vom DS3231 geweckt
+   - Prüfung ob heute die Zeit umgestellt werden muß
+     - Falls ja, wird die RCT eine Stunde vor oder zurück gestellt
+     - AVR geht bis zur täglichen Weckzeit schlafen
 
 ### Statusblinken in Endlosschleife:
 *100ms an / 233ms aus*
