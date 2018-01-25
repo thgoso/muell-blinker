@@ -24,7 +24,6 @@
 #include <avr/io.h>
 #include <avr/sleep.h>
 #include <avr/interrupt.h>
-#include "config.h"
 #include "io_func.h"
 
 /***********************************************************************************************************************
@@ -51,13 +50,13 @@ static void sleep_until (const pbcd_time_t *wakeuptime)
   pbcd_date_time_t cur_date_time;
 
   while (1) {
-    set_alarm_time(wakeuptime);                             // Alarmfunktion DS3231 einschalten
-    GIMSK = 0b01000000;                                     // INT0 IRQ bei Low Pegel an INT0
-    sei();                                                  // IRQ Freigabe (zum aufwachen durch Low an INT0)
-    set_sleep_mode(SLEEP_MODE_PWR_DOWN);                    // AVR Tiefschlaf, wecken durch IRQ generiert vom DS3231
-    sleep_mode();                                           // Gute Nacht AVR!
-    cli();                                                  // Nach Aufwachen IRQs verbieten, da INT0 weiter Low ist
-    get_date_and_time(&cur_date_time);                      // Aktuelle Zeit abholen, Vergleichen mit pbcd_wakeuptime
+    set_alarm_time(wakeuptime);                   // Alarmfunktion DS3231 einschalten (JETZT ist INT0 = High)
+    GIMSK = 0b01000000;                           // INT0 IRQ bei Low Pegel an INT0
+    sei();                                        // IRQ Freigabe (zum aufwachen durch Low an INT0)
+    set_sleep_mode(SLEEP_MODE_PWR_DOWN);          // AVR Tiefschlaf, wecken durch IRQ generiert vom DS3231
+    sleep_mode();                                 // Gute Nacht AVR!
+    cli();                                        // Nach Aufwachen IRQs verbieten, da INT0 weiter Low ist
+    get_date_and_time(&cur_date_time);            // Aktuelle Zeit abholen, Vergleichen mit pbcd_wakeuptime
     if ((cur_date_time.time.hour == wakeuptime->hour) && \
         (cur_date_time.time.minute == wakeuptime->minute)) break;
   }
@@ -96,6 +95,7 @@ int main (void)
   // Danach geht's wieder schlafen bis zur normalen täglichen Weckzeit
   while (1) {
     while (1) {
+      // LEDs 10 Minuten passend steuern falls Stunde != 0, LED-Daten für heute vorhanden, Taster nicht gedrückt wurde
       get_date_and_time(&cur_date_time);
       if (cur_date_time.time.hour == 0x00) break;
       led_byte = get_ledbyte_for_date(&cur_date_time.date);
@@ -103,11 +103,14 @@ int main (void)
       if (led_blink_10min(led_byte) == KEY_PRESSED) break;
     }
 
+    // schlafen bis 01:30 Uhr
     wakeup_time.hour = 0x01;
     wakeup_time.minute = 0x30;
     sleep_until(&wakeup_time);
+    // um 01:30 nach aufwachen ggf. Zeit ME(S)Z umstellen
     get_date_and_time(&cur_date_time);
     switch_time_on_switchdate_1_30(&cur_date_time.date);
+    // schlafen bis zur normalen täglichen Weckzeit
     get_daily_wakeup_time(&wakeup_time);
     sleep_until(&wakeup_time);
   }

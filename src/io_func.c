@@ -28,8 +28,15 @@
 #include "i2cmaster.h"
 #include "io_func.h"
 
+
 // ---------------------------------------------------------------------------------------------------------------------
-// Adressen Datenbytes für LED-Status der Tage
+// LEDs am LED_KEY_PORT setzten, am Tasteranschluss jedoch Pull-Up an lassen
+#define SET_LEDS(ledbyte)     (LED_KEY_PORT = (ledbyte | (1<<KEY)))
+#define CLEAR_LEDS            (LED_KEY_PORT = (0b00000000 | (1<<KEY)))
+// Taster abfragen, LEDs ausmaskieren... Liefert 0 wenn Taster gedrückt
+#define READ_KEY              (LED_KEY_PIN & (1<<KEY))
+// ---------------------------------------------------------------------------------------------------------------------
+// Adressen Datenbytes für LED-Status der Tage im EEPROM 24c32 bzw. Array-Index falls im AVR-Flash oder EEPROM
 // 0-383 --> pro Monat 32 Bytes (Am Ende des Monats immer Füllbytes)
 // 0-31=Januar, 32-60=Februar ... 352-383=Dezember
 //
@@ -71,31 +78,50 @@
 
 
 
+
 // Private Funktionen
 /***********************************************************************************************************************
-* blockierende Pause
-* Übergabe: Wartetdauer in ms
+* Konvertiert ein übergebenes Byte vom Packed-BCD nach normal binär
+* Übergabe: Byte im PBCD-Format
+* Rückgabe: Wert gewandelt
 ***********************************************************************************************************************/
-static void delay_ms (uint16_t ms)
+static inline void __attribute__((always_inline)) pbcd_to_bin (uint8_t *byte)
 {
-  for ( ;ms>0; ms--) {
-    _delay_ms(1);
-  }
+  uint8_t ones = (*byte & 0b00001111);
+  uint8_t tens = (((*byte >>4) & 0b00001111) * 10);
+  *byte = (ones + tens);
 }
 /***********************************************************************************************************************
 * Endlosschleife mit schnell blinkenden LEDs zur Status/Fehleranzeige
 * Übergabe: LED-Byte mit passend gesetzten Bits LEDs die EIN sein sollen
 ***********************************************************************************************************************/
-static void status_blink_endless (uint8_t led_byte)
+static void __attribute__((noreturn)) status_blink_endless (uint8_t led_byte)
 {
-  led_byte |= (1<<KEY);                           // Taste Pull-Up = Ein, LEDs nach Vorgabe
-
   while (1) {
-    LED_KEY_PORT = (0b00000000 | (1<<KEY));       // Alle LEDs aus, Taster interner Pull-Up = an
-    delay_ms(233);
-    LED_KEY_PORT = led_byte;                      // Entsprechende LEDs an
-    delay_ms(100);
+    CLEAR_LEDS;
+    _delay_ms(233);
+    SET_LEDS(led_byte);
+    _delay_ms(100);
   }
+}
+/***********************************************************************************************************************
+* Blinkhilfsfunktion zur Anzeige von Datum/Zeit mittels LEDs
+* LEDs werden so oft an/aus geschaltet wie "pbcd_byte" angibt, danach eine Sekunde Pause
+* Während blinken KEINE Tastenabfrage
+* Übergabe: Zeitbyte im PACKED-BCD-Format
+*           LED-Byte zum steuern von LED_KEY_PORT
+***********************************************************************************************************************/
+static void blink_loop (uint8_t pbcd_byte, uint8_t led_byte)
+{
+  pbcd_to_bin(&pbcd_byte);                        // Wandeln nach normal binär
+
+  for ( ;pbcd_byte>0; pbcd_byte--) {
+    SET_LEDS(led_byte);
+    _delay_ms(100);
+    CLEAR_LEDS;
+    _delay_ms(500);
+  }
+  _delay_ms(1000);
 }
 /***********************************************************************************************************************
 * Funktion zum lesen von Datenbyte Adresse/Index 0-392
@@ -158,55 +184,6 @@ static void ds_write_reg (uint8_t reg, uint8_t val)
   if (i2c_write(val) != 0) status_blink_endless(LED_ERR_DS);
   i2c_stop();
 }
-/***********************************************************************************************************************
-* Konvertiert ein übergebenes Byte vom Packed-BCD nach normal binär
-* Übergabe: Byte im PBCD-Format
-* Rückgabe: Wert gewandelt
-***********************************************************************************************************************/
-static void pbcd_to_bin (uint8_t *byte)
-{
-  uint8_t ones = (*byte & 0b00001111);
-  uint8_t tens = (((*byte >>4) & 0b00001111) * 10);
-  *byte = (ones + tens);
-}
-/***********************************************************************************************************************
-* Blinkhilfsfunktion zur Anzeige von Datum/Zeit mittels LEDs
-* LEDs werden so oft an/aus geschaltet wie "pbcd_byte" angibt, danach eine Sekunde Pause
-* Während blinken KEINE Tastenabfrage
-* Übergabe: Zeitbyte im PACKED-BCD-Format
-*           LED-Byte zum steuern von LED_KEY_PORT
-***********************************************************************************************************************/
-static void blink_loop (uint8_t pbcd_byte, uint8_t led_byte)
-{
-  pbcd_to_bin(&pbcd_byte);                        // Wandeln nach normal binär
-  led_byte |= (1<<KEY);                           // Taste Pull-Up = Ein, LEDs nach Vorgabe
-
-  for ( ;pbcd_byte>0; pbcd_byte--) {
-    LED_KEY_PORT = led_byte;                      // LED-Byte anlegen
-    delay_ms(100);
-    LED_KEY_PORT = (0b00000000 | (1<<KEY));       // Alle LEDs aus, Taster interner Pull-Up = an
-    delay_ms(500);
-  }
-  delay_ms(1000);
-}
-/***********************************************************************************************************************
-* Blockierende Pause von 900ms Dauer
-* Taste wird zwischendurch abgefragt
-* Sollte diese gedrückt werden, wird unterbrochen und es geht mit KEY_PRESSED zurück
-* Sollten die 900ms ohne Tasterdruck verstrichen sein, wird KEY_UNPRESSED zurückgegeben
-***********************************************************************************************************************/
-static uint8_t check_key_pressed_900ms (void)
-{
-  uint8_t cnt;
-
-  for (cnt=18; cnt>0; cnt--) {                    // 18 Durchgänge
-    if ((LED_KEY_PIN & (1<<KEY)) == 0) {          // Raus bei Tastendruck
-      return KEY_PRESSED;
-    }
-    delay_ms(50);                                 // 50ms * 18 Durchgänge = 900 ms
-  }
-  return KEY_UNPRESSED;
-}
 /**********************************************************************************************************************/
 
 
@@ -234,8 +211,8 @@ void set_rtc_on_keypress (void)
   uint8_t tmp;
 
   for (tmp=50; tmp>0; tmp--) {                    // In 50 Durchgängen
-    delay_ms(100);                                // 100ms warten = 5 Sek
-    if ((LED_KEY_PIN & (1<<KEY)) != 0) return;    // Wenn nicht gedrückt oder losgelassen
+    _delay_ms(100);                               // 100ms warten = 5 Sek
+    if (READ_KEY != 0) return;                    // Wenn nicht gedrückt oder losgelassen
   }
 
   // Startsekunde auf "05" stellen, da beim Einschalten Taste 5 Sekunden gedrückt wurde
@@ -320,18 +297,18 @@ uint8_t get_ledbyte_for_date (const pbcd_date_t *pbcd_date)
 ***********************************************************************************************************************/
 uint8_t led_blink_10min (uint8_t led_byte)
 {
-  uint16_t cnt;
+  uint16_t cnt_10min;
+  uint8_t  cnt_900ms;
 
-  led_byte |= (1<<KEY);                           // Taste Pull-Up = Ein, LEDs nach Vorgabe
-
-  for (cnt=600; cnt>0; cnt--) {                   // Schleife 600 Durchgänge == 10 Minute LEDs steuern
-    LED_KEY_PORT = led_byte;                      // LEDs einschalten (KEY ist gesetzt/High... Pull-Up)
-    delay_ms(100);                                // 100ms aufblitzen
+  for (cnt_10min=600;cnt_10min>0;cnt_10min--) {   // Schleife 600 Durchgänge == 10 Minute LEDs steuern
+    SET_LEDS(led_byte);                           // LEDs ein
+    _delay_ms(100);                               // 100ms aufblitzen
 #if LED_MODE == MODE_BLINK
-    LED_KEY_PORT = (0b00000000 | (1<<KEY));       // Alle wieder aus, 900ms aus lassen, Taster abfragen
+    CLEAR_LEDS;                                   // Alle wieder aus, 900ms aus lassen
 #endif
-    if (check_key_pressed_900ms()==KEY_PRESSED) { // Raus bei Tastendruck
-      return KEY_PRESSED;
+    for (cnt_900ms=18;cnt_900ms>0;cnt_900ms--) {  // Taster abfragen, 18 Durchgänge
+      if (READ_KEY == 0) return KEY_PRESSED;      // Raus bei Tastendruck
+      _delay_ms(50);                              // 50ms * 18 Durchgänge = 900 ms
     }
   }
 
@@ -378,7 +355,7 @@ void set_alarm_time (const pbcd_time_t *pbcd_time)
   // Alarm-Statusflags in SREG zurücksetzten
   ds_write_reg(DS_SREG, 0b00000000);
   // Warten damit DS3231 INT0 auf High bringen kann (Low = Wecksignal)
-  delay_ms(200);
+  _delay_ms(200);
 }
 /***********************************************************************************************************************
 * Prüft ob übergebenes Datum ein Tag ist, an dem Zeitumstellung ME(S)Z stattfindet
@@ -390,22 +367,14 @@ void set_alarm_time (const pbcd_time_t *pbcd_time)
 ***********************************************************************************************************************/
 void switch_time_on_switchdate_1_30 (const pbcd_date_t *pbcd_date)
 {
-  uint8_t refday;
-
-  // Tag der Zeitumstellung im März aus EEPROM/Flash laden
-  refday = load_data_byte(ADR_MESZ_MAR);
-  if ((pbcd_date->month == 0x03) && (refday == pbcd_date->day)) {
-    // Heute Zeitumstellung eine Stunde vor von 1 Uhr auf 2 Uhr
-    ds_write_reg(DS_HOURS, 0x02);
-    return;
-  }
-
-  // Tag der Zeitumstellung im Oktober aus EEPROM/Flash laden
-  refday = load_data_byte(ADR_MESZ_OCT);
-  if ((pbcd_date->month == 0x10) && (refday == pbcd_date->day)) {
-    // Heute Zeitumstellung eine Stunde zurück von 1 Uhr auf 0 Uhr
-    ds_write_reg(DS_HOURS, 0x00);
-    return;
+  switch (pbcd_date->month) {
+    case 0x03:
+      // Heute Zeitumstellung "??.03" eine Stunde vor von 1 Uhr auf 2 Uhr
+      if (load_data_byte(ADR_MESZ_MAR) == pbcd_date->day) ds_write_reg(DS_HOURS, 0x02);
+      break;
+    case 0x10:
+      // Heute Zeitumstellung "??.10" eine Stunde zurück von 1 Uhr auf 0 Uhr
+      if (load_data_byte(ADR_MESZ_OCT) == pbcd_date->day) ds_write_reg(DS_HOURS, 0x00);
+      break;
   }
 }
-

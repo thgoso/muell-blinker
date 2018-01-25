@@ -81,7 +81,7 @@ void get_daily_wakeup_time (pbcd_time_t *pbcd_time);
 void set_alarm_time (const pbcd_time_t *pbcd_time);
 // ---------------------------------------------------------------------------------------------------------------------
 // Prüft ob übergebenes Datum einem Datum entspricht an dem Zeitumstellung ME(S)Z erfolgt
-// Falls ja, wird die RTC eine Stunde vor oder zurückgestellt
+// Falls ja, wird die RTC eine Stunde vor- oder zurückgestellt
 // Funktion MUSS IMMER Nachts um 01:30 aufgerufen werden
 // Falls die Zeit umgestellt wird ist es danach 00:30 oder 02:30
 // Es wird im DS3231 NUR das Register für Stunde korrigiert... der Rest läuft so weiter wie er ist
