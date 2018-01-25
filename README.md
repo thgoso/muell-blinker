@@ -22,6 +22,7 @@ Mittels Datei "Abfuhrkalender.ods" im Ordner infos oder selbst erzeugen.
 - Entweder im EEPROM (24C32) des DS3231 Boards gespeichert werden (EEPROMMER erforderlich)
 - oder im internen EEPROM des AVR (nicht möglich mit ATtiny24, jedoch bei Typen mit großem EEPROM)
 - oder im Flash des AVR gespeichert werden (beim ATtiny24 ebenfalls möglich)
+
 Dazu sind für jeden Monat 32 Bytes genutzt (Somit hat jeder Monat gleich viel Tage)
 
 **Die Daten gehören:**
