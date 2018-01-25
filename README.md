@@ -1,10 +1,12 @@
 # Mülltonnen-Blinker
 
 ## Zutaten:
-- RTC-Board mit DS3231, EEPROM 24C32 und Knopzelle (gibt's im großen Onlineauktionshaus)
 - ATtiny24
 - Taster
 - max. 7 LEDs
+  - eine pro Mülltonne in passender Farbe
+- RTC-Board mit DS3231, EEPROM 24C32 und Knopzelle (gibt's im großen Onlineauktionshaus)
+  - Pull-Up-Widerstände für SDA, SCL, SQW/INT sind dort integriert
 
 ![Bild](https://github.com/thgoso/muell-blinker/blob/master/infos/DS3231-Board.jpg)
 
