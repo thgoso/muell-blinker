@@ -33,8 +33,8 @@ Dazu sind für jeden Monat 32 Bytes genutzt (Somit hat jeder Monat gleich viel T
 | Adresse/Index Dezimal | Datum                                     |
 | --------------------- | ----------------------------------------- |
 | 0-31                  | 1.1 - 31.1 = 31 Datenbytes + 1 Füllbyte   |
-| 32-60                 | 1.2 - 29.2 = 29 Datenbytes + 3 Füllbytes  |
-| 64-94                 | 1.3 - 31.3 = 31 Datenbytes + 1 Füllbyte   |
+| 32-63                 | 1.2 - 29.2 = 29 Datenbytes + 3 Füllbytes  |
+| 64-96                 | 1.3 - 31.3 = 31 Datenbytes + 1 Füllbyte   |
 | .                     | .                                         |
 | .                     | .                                         |
 | .                     | .                                         |
