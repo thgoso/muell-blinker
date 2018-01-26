@@ -37,7 +37,7 @@ MCU = attiny24
 
 # Main Oscillator Frequency
 # This is only used to define F_CPU in all assembler and c-sources.
-F_CPU = 8000000UL
+F_CPU = 1000000UL
 # Output format. (can be srec, ihex, binary)
 FORMAT = ihex
 
@@ -46,7 +46,7 @@ TARGET = Tonnen-Blinker-Tiny24
 
 
 # List C source files here. (C dependencies are automatically generated.)
-SRC = main.c io_func.c
+SRC = main.c set_led.c ds3231.c load_data.c
 
 
 # List Assembler source files here.
