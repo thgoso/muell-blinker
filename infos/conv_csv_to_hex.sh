@@ -16,8 +16,8 @@ fi
 rm -f "/tmp/Abfuhrkalender.bin"
 rm -f "/tmp/Abfuhrkalender.hex"
 
-# Aus csv ab Zeile 4 jeweils Spalte 12 (HEX Databyte) lesen; Binärdatei erstellen
-cat "$1" | awk -F '\t' '{if (NR > 3) print $12}' | xxd -r -p >> "/tmp/Abfuhrkalender.bin"
+# Aus csv ab Zeile 4 bis Zeile 398 jeweils Spalte 12 (HEX Databyte) lesen; Binärdatei erstellen
+cat "$1" | awk -F '\t' '{if (NR > 3 && NR <= 398) print $12}' | xxd -r -p >> "/tmp/Abfuhrkalender.bin"
 # Binärdatei --> Intel-Hex
 avr-objcopy -I binary -O ihex "/tmp/Abfuhrkalender.bin" "/tmp/Abfuhrkalender.hex"
 # Ausgabe in stdout
