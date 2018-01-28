@@ -169,7 +169,7 @@ static void work_on_1_30 (void)
       break;
     case 0x10:
       tmp = ds_read_reg(DS_DATE);
-      if (load_pbcd_byte(ADR_MESZ_OCT) == tmp) ds_write_reg(DS_HOURS, 0x02);
+      if (load_pbcd_byte(ADR_MESZ_OCT) == tmp) ds_write_reg(DS_HOURS, 0x00);
       break;
   }
 }
