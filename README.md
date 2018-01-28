@@ -191,5 +191,5 @@ Bei geschickter Wahl von "Weckzeit" und "Schlafenszeit" des AVR läßt sich somi
 ![Bild](https://github.com/thgoso/muell-blinker/blob/master/infos/Testaufbau.jpg)
 
 ### Stromverbrauch ca.
-Je nach LEDs und Vorwiderständen bei mir 3-5 mA wenn LEDs angesteuert werden und 150 µA wenn der AVR schläft. Auf dem DS-Board wurde die rote Power-On-LED entfernt.
+Je nach LEDs und Vorwiderständen bei mir 3-5 mA wenn LEDs angesteuert werden und 150 µA wenn der AVR schläft (@Vcc = 4,0 Volt). Auf dem DS-Board wurde die rote Power-On-LED entfernt.
 
