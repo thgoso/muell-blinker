@@ -28,25 +28,15 @@
 ; interrupt routines, not both.
 ;
 ;*************************************************************************
-
+; ------------------- Anpassungen für Tonnenbinker -----------------------
+; defines SDA, SCL, SDA_PORT, SCL_PORT --> ausgelagert in config.h
+; i2c_delay_T2:                        --> ergänzt für 1 MHz
+; i2c_init:                            --> entfernt, da ungenutzt
+; i2c_start_wait:                      --> entfernt, da ungenutzt
+; ------------------------------------------------------------------------
 
 #include <avr/io.h>
 #include "config.h"
-
-;#undef SCL_PORT
-;#undef SCL_DDR
-
-
-;******----- Adapt these SCA and SCL port and pin definition to your target !!
-;
-;#define SDA             0           // SDA Port B, Pin 2
-;#define SCL             1           // SCL Port B, Pin 3
-;#define SDA_PORT        PORTB       // SDA Port B
-;#define SCL_PORT        PORTB       // SCL Port B
-
-;******----------------------------------------------------------------------
-; <--- relocated to "config.h"
-
 
 ;-- map the IO register back into the IO address space
 #define SDA_DDR   (_SFR_IO_ADDR(SDA_PORT) - 1)
@@ -56,10 +46,11 @@
 #define SDA_IN    (_SFR_IO_ADDR(SDA_PORT) - 2)
 #define SCL_IN    (_SFR_IO_ADDR(SCL_PORT) - 2)
 
-
 #ifndef __tmp_reg__
 #define __tmp_reg__ 0
 #endif
+
+
 
 
   .section .text
@@ -73,7 +64,11 @@
   .stabs  "i2cmaster.S",100,0,0,i2c_delay_T2
   .func i2c_delay_T2  ; delay 5.0 microsec with 4 Mhz crystal
 i2c_delay_T2:        ; 3 cycles
-#if F_CPU <= 4000000UL
+#if F_CPU <= 1000000UL
+    rjmp 1f          ; 2 cycles
+1:  nop              ; 1 cycle
+    ret              ; 4 cycles = total 10 cycles = 10.0 microsec with 1 MHz
+#elif F_CPU <= 4000000UL
   rjmp 1f      ; 2   "
 1:  rjmp 2f      ; 2   "
 2:  rjmp 3f      ; 2   "
@@ -119,22 +114,6 @@ i2c_delay_T2:        ; 3 cycles
 
 
 ;*************************************************************************
-; Initialization of the I2C bus interface. Need to be called only once
-;
-; extern void i2c_init(void)
-;*************************************************************************
-  .global i2c_init
-  .func i2c_init
-i2c_init:
-  cbi SDA_DDR,SDA   ;release SDA
-  cbi SCL_DDR,SCL   ;release SCL
-  cbi SDA_OUT,SDA
-  cbi SCL_OUT,SCL
-  ret
-  .endfunc
-
-
-;*************************************************************************
 ; Issues a start condition and sends address and transfer direction.
 ; return 0 = device accessible, 1= failed to access device
 ;
@@ -174,32 +153,6 @@ i2c_rep_start:
   rcall   i2c_delay_T2  ;delay  T/2
 
   rcall i2c_write ;write address
-  ret
-  .endfunc
-
-
-;*************************************************************************
-; Issues a start condition and sends address and transfer direction.
-; If device is busy, use ack polling to wait until device is ready
-;
-; extern void i2c_start_wait(unsigned char addr);
-; addr = r24
-;*************************************************************************
-
-  .global i2c_start_wait
-  .func   i2c_start_wait
-i2c_start_wait:
-  mov __tmp_reg__,r24
-i2c_start_wait1:
-  sbi   SDA_DDR,SDA ;force SDA low
-  rcall   i2c_delay_T2  ;delay T/2
-  mov r24,__tmp_reg__
-  rcall   i2c_write ;write address
-  tst r24   ;if device not busy -> done
-  breq  i2c_start_wait_done
-  rcall i2c_stop  ;terminate write operation
-  rjmp  i2c_start_wait1 ;device busy, poll ack again
-i2c_start_wait_done:
   ret
   .endfunc
 
