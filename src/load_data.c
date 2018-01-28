@@ -23,7 +23,7 @@
 
 #include <avr/io.h>
 #include "config.h"
-#include "set_led.h"
+#include "pbcd.h"
 
 // ---------------------------------------------------------------------------------------------------------------------
 // Datenarray in AVR-EEPROM oder AVR-Flash erstellen (falls entsprechende Variante gewählt)
@@ -36,7 +36,7 @@
 
 #elif DATA_LOAD == FROM_EEPROM_AT24C32
   #include "i2cmaster.h"
-
+  #include "set_led.h"
 #endif
 
 /***********************************************************************************************************************
@@ -46,7 +46,7 @@
 * - oder AVR-Flash my_data[] (Adresse = Index 0-394)
 * - oder 24C32 EEPROM auf DS-Board (EEPROM Adresse = 0-394)
 ***********************************************************************************************************************/
-uint8_t load_data_byte (uint16_t adr)
+uint8_t load_pbcd_byte (uint16_t adr)
 {
 #if DATA_LOAD == FROM_FLASH_AVR
   return my_flash_data[adr];
@@ -69,4 +69,25 @@ uint8_t load_data_byte (uint16_t adr)
   i2c_stop();
   return data;
 #endif
+}
+/***********************************************************************************************************************
+* Liest die Abfuhrdaten für übergebenes Datum aus dem int.EEPROM/ext.EEPROM/Flash
+* Gibt das Byte zur LED Ansteuerung zurück
+* Wenn heute KEINE Abholung, Rückgabe = 0
+***********************************************************************************************************************/
+uint8_t load_led_byte_for_date (uint8_t pbcd_date, uint8_t pbcd_month)
+{
+  uint16_t adr;
+  uint8_t  retval;
+
+  pbcd_to_bin(pbcd_date);                         // Beide wandeln PBCD --> Binär
+  pbcd_to_bin(pbcd_month);                        // Adresse (EEPROM/Array) für Datum berechnen: ((Monat-1)*32)+(Tag-1)
+  pbcd_date--;                                    // 0...30
+  pbcd_month--;                                   // 0...11
+  adr = pbcd_month;                               // adr (16Bit) = 0...11
+  adr <<=5;                                       // * 32 = 0,32,64,96,128,160,192,224,256,288,320,352
+  adr += pbcd_date;                               // + Tag 0...30
+  retval = load_pbcd_byte(adr);                   // LED-Byte (Abfuhrdaten) aus int.EEPROM/ext.EEPROM/Flash laden
+  retval &= ~(1<<KEY);                            // KEY-PIN ausmaskieren/löschen
+  return retval;
 }

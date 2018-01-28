@@ -44,8 +44,15 @@
 
 // ---------------------------------------------------------------------------------------------------------------------
 // Liest Daten-Byte aus AVR-Flash oder AVR-EEPROM oder AT24C32-EEPROM aus (je nach LOAD_FROM in config.h)
-// Übergabe Adresse = 0 - 394
-uint8_t load_data_byte (uint16_t adr);
+// Übergabe: Adresse aus obigen Definitionen... 384 - 394
+// Rückgabe: Zeitbyte in Packed BCD Form
+uint8_t load_pbcd_byte (uint16_t adr);
+// ---------------------------------------------------------------------------------------------------------------------
+// Liest Abfuhrbyte (Byte zur LED-Steuerung) aus AVR-Flash oder AVR-EEPROM oder AT24C32-EEPROM aus
+// Übergabe: Datum in PBCD-Form
+// Rückgabe: LED-Byte passend zu diesem Datum
+// Rückgabe = 0, wenn für diesen Tag keine LED-Daten hinterlegt (LEDs aus)
+uint8_t load_led_byte_for_date (uint8_t pbcd_date, uint8_t pbcd_month);
 // ---------------------------------------------------------------------------------------------------------------------
 
 #endif

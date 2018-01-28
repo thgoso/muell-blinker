@@ -42,43 +42,10 @@
 *                          in "config.h" wählbar
 ***********************************************************************************************************************/
 
-// ---------------------------------------------------------------------------------------------------------------------
-// Hilfsfunktionen
-/***********************************************************************************************************************
-* Konvertiert ein übergebenes Byte vom Packed-BCD nach normal binär
-* Übergabe: Byte im PBCD-Format
-* Rückgabe: Wert gewandelt
-***********************************************************************************************************************/
-static inline void __attribute__((always_inline)) pbcd_to_bin (uint8_t *byte)
-{
-  uint8_t tmp = *byte >>4;                        // tmp = 10er-Stelle
-  *byte &= 0b00001111;                            // ret = 1er
-  tmp <<=1;                                       // 10er-Stelle * 2
-  *byte += tmp;                                   // ret = 1er + 10er*2
-  tmp <<=2;                                       // 10er-Stelle * 8
-  *byte += tmp;                                   // ret = 1er + 10er*2 + 10er*8
-}
-/***********************************************************************************************************************
-* Liest die Abfuhrdaten für übergebenes Datum aus dem int.EEPROM/ext.EEPROM/Flash
-* Gibt das Byte zur LED Ansteuerung zurück
-* Wenn heute KEINE Abholung, Rückgabe = 0
-***********************************************************************************************************************/
-static uint8_t get_ledbyte_for_date (uint8_t pbcd_date, uint8_t pbcd_month)
-{
-  uint16_t adr;
-  uint8_t  retval;
 
-  pbcd_to_bin(&pbcd_date);                        // Beide wandeln PBCD --> Binär
-  pbcd_to_bin(&pbcd_month);                       // Adresse (EEPROM/Array) für Datum berechnen: ((Monat-1)*32)+(Tag-1)
-  pbcd_date--;                                    // 0...30
-  pbcd_month--;                                   // 0...11
-  adr = pbcd_month;                               // adr (16Bit) = 0...11
-  adr <<=5;                                       // * 32 = 0,32,64,96,128,160,192,224,256,288,320,352
-  adr += pbcd_date;                               // + Tag 0...30
-  retval = load_data_byte(adr);                   // LED-Byte (Abfuhrdaten) aus int.EEPROM/ext.EEPROM/Flash laden
-  retval &= ~(1<<KEY);                            // KEY-PIN ausmaskieren/löschen
-  return retval;
-}
+
+
+
 /***********************************************************************************************************************
 * INT0 IRQ wird nur für's aufwachen benötigt
 ***********************************************************************************************************************/
@@ -94,7 +61,6 @@ static void sleep_until (uint8_t pbcd_hour, uint8_t pbcd_minute)
 
   while (1) {
     ds_set_alarm_time(pbcd_hour, pbcd_minute);    // Alarmfunktion DS3231 einschalten (JETZT ist INT0 = High)
-    GIMSK = 0b01000000;                           // INT0 IRQ bei Low Pegel an INT0
     sei();                                        // IRQ Freigabe (zum aufwachen durch Low an INT0)
     set_sleep_mode(SLEEP_MODE_PWR_DOWN);          // AVR Tiefschlaf, wecken durch IRQ generiert vom DS3231
     sleep_mode();                                 // Gute Nacht AVR!
@@ -104,15 +70,13 @@ static void sleep_until (uint8_t pbcd_hour, uint8_t pbcd_minute)
     if ((cur_hour == pbcd_hour) && (cur_minute == pbcd_minute)) break;
   }
 }
-// ---------------------------------------------------------------------------------------------------------------------
-// Hauptfunktionen
 /***********************************************************************************************************************
 * Wenn Taste 5 Sekunden durchgehend gedrückt:
 * Initialwerte Startzeit/Datum aus EEPROM/Flash laden und RTC stellen (Startzeit/Datum)
 * Endlosschleife Statusblinken
 * Wenn nicht gedrückt, Rückkehr ohne Änderungen
 ***********************************************************************************************************************/
-static void Set_RTC_On_Keypress (void)
+static void set_rtc_on_keypress (void)
 {
   uint8_t tmp;
 
@@ -123,11 +87,11 @@ static void Set_RTC_On_Keypress (void)
 
   // Startsekunde auf "05" stellen, da beim Einschalten Taste 5 Sekunden gedrückt wurde
   ds_write_reg(DS_SECONDS, 0x05);
-  tmp = load_data_byte(ADR_RTC_START_MINUTE); ds_write_reg(DS_MINUTES, tmp);
-  tmp = load_data_byte(ADR_RTC_START_HOUR);   ds_write_reg(DS_HOURS, tmp);
-  tmp = load_data_byte(ADR_RTC_START_DATE);   ds_write_reg(DS_DATE, tmp);
-  tmp = load_data_byte(ADR_RTC_START_MONTH);  ds_write_reg(DS_MONTH, tmp);
-  tmp = load_data_byte(ADR_RTC_START_YEAR);   ds_write_reg(DS_YEAR, tmp);
+  tmp = load_pbcd_byte(ADR_RTC_START_MINUTE); ds_write_reg(DS_MINUTES, tmp);
+  tmp = load_pbcd_byte(ADR_RTC_START_HOUR);   ds_write_reg(DS_HOURS, tmp);
+  tmp = load_pbcd_byte(ADR_RTC_START_DATE);   ds_write_reg(DS_DATE, tmp);
+  tmp = load_pbcd_byte(ADR_RTC_START_MONTH);  ds_write_reg(DS_MONTH, tmp);
+  tmp = load_pbcd_byte(ADR_RTC_START_YEAR);   ds_write_reg(DS_YEAR, tmp);
 
   // Endlosschleife Statusblinken
   leds_blink_endless(LED_TIME_SET);
@@ -142,20 +106,20 @@ static void Set_RTC_On_Keypress (void)
 * LED_HOUR blink    15 mal
 * LED_MINUTE blinkt 10 mal
 ***********************************************************************************************************************/
-static void Show_Date_And_Time (void)
+static void show_date_and_time (void)
 {
   uint8_t tmp;
 
-  tmp = ds_read_reg(DS_DATE);    pbcd_to_bin(&tmp); leds_blink_n_times(tmp, LED_DATE);
-  tmp = ds_read_reg(DS_MONTH);   pbcd_to_bin(&tmp); leds_blink_n_times(tmp, LED_MONTH);
-  tmp = ds_read_reg(DS_HOURS);   pbcd_to_bin(&tmp); leds_blink_n_times(tmp, LED_HOUR);
-  tmp = ds_read_reg(DS_MINUTES); pbcd_to_bin(&tmp); leds_blink_n_times(tmp, LED_MINUTE);
+  tmp = ds_read_reg(DS_DATE);    leds_blink_pbcd_times(tmp, LED_DATE);
+  tmp = ds_read_reg(DS_MONTH);   leds_blink_pbcd_times(tmp, LED_MONTH);
+  tmp = ds_read_reg(DS_HOURS);   leds_blink_pbcd_times(tmp, LED_HOUR);
+  tmp = ds_read_reg(DS_MINUTES); leds_blink_pbcd_times(tmp, LED_MINUTE);
 }
 /***********************************************************************************************************************
 * Läd zum aktuellen Datum das LED-Byte (Abfuhrdaten) und steuert LEDs passend dazu an
 * Kehrt zurück sobald der Taster gedrückt wurde, die reguläre Schlafenszeit erreicht ist oder keine Daten für Heute
 ***********************************************************************************************************************/
-static void Work_Until_Sleeptime (void)
+static void work_until_sleeptime (void)
 {
   uint8_t cur_minute, cur_hour;
   uint8_t sleep_hour, sleep_minute;
@@ -163,13 +127,13 @@ static void Work_Until_Sleeptime (void)
 
   while (1) {
     // Schlafenszeit aus EEPROM, Flash laden
-    // DS3231 Alarm auf diese Zeit setzten, DS zieht INT0 auf High wenn Alarmzeit erreicht/überschritten
-    sleep_hour = load_data_byte(ADR_SLEEP_HOUR);
-    sleep_minute = load_data_byte(ADR_SLEEP_MINUTE);
+    // DS3231 Alarm auf diese Zeit setzten, DS zieht INT0 auf Low wenn Alarmzeit erreicht/überschritten
+    sleep_hour = load_pbcd_byte(ADR_SLEEP_HOUR);
+    sleep_minute = load_pbcd_byte(ADR_SLEEP_MINUTE);
     ds_set_alarm_time(sleep_hour, sleep_minute);
 
     // LED-Byte zum aktuellen Datum holen, gleich raus, wenn zu heute keine Daten vorliegen
-    led_byte = get_ledbyte_for_date((ds_read_reg(DS_DATE)), (ds_read_reg(DS_MONTH)));
+    led_byte = load_led_byte_for_date((ds_read_reg(DS_DATE)), (ds_read_reg(DS_MONTH)));
     if (led_byte == 0) return;
 
     // LEDs steuern bis Tasterdruck, oder Schlafenszeit erreicht
@@ -188,47 +152,27 @@ static void Work_Until_Sleeptime (void)
   }
 }
 /***********************************************************************************************************************
-* Läßt AVR bis 01:30 Uhr schlafen
-***********************************************************************************************************************/
-static void Sleep_Until_1_30 (void)
-{
-  sleep_until(0x01, 0x30);
-}
-/***********************************************************************************************************************
 * Prüft ob Datum zur Zeitumstellung ME(S)Z ist
 * Falls ja, wird das Stundenregister des DS3231 angepaßt
 * Falls nein, geht's ohne Änderungen zurück
 *
 * Funktion MUSS IMMER Nachts um 01:30 aufgerufen werden
 ***********************************************************************************************************************/
-static void Work_On_1_30 (void)
+static void work_on_1_30 (void)
 {
-  uint8_t cur_date = ds_read_reg(DS_DATE);
-  uint8_t cur_month = ds_read_reg(DS_MONTH);
+  uint8_t tmp = ds_read_reg(DS_MONTH);
 
-  switch (cur_month) {
+  switch (tmp) {
     case 0x03:
-      // Heute Zeitumstellung "??.03" eine Stunde vor von 1 Uhr auf 2 Uhr
-      if (load_data_byte(ADR_MESZ_MAR) == cur_date) ds_write_reg(DS_HOURS, 0x02);
+      tmp = ds_read_reg(DS_DATE);
+      if (load_pbcd_byte(ADR_MESZ_MAR) == tmp) ds_write_reg(DS_HOURS, 0x02);
       break;
     case 0x10:
-      // Heute Zeitumstellung "??.10" eine Stunde zurück von 1 Uhr auf 0 Uhr
-      if (load_data_byte(ADR_MESZ_OCT) == cur_date) ds_write_reg(DS_HOURS, 0x00);
+      tmp = ds_read_reg(DS_DATE);
+      if (load_pbcd_byte(ADR_MESZ_OCT) == tmp) ds_write_reg(DS_HOURS, 0x02);
       break;
   }
 }
-/***********************************************************************************************************************
-* Läßt AVR bis zur normalen Weckzeit schlafen
-***********************************************************************************************************************/
-static void Sleep_Until_Wakeuptime (void)
-{
-  uint8_t wakeup_hour = load_data_byte(ADR_WAKEUP_HOUR);
-  uint8_t wakeup_minute = load_data_byte(ADR_WAKEUP_MINUTE);
-
-  sleep_until(wakeup_hour, wakeup_minute);
-}
-// ---------------------------------------------------------------------------------------------------------------------
-// Hauptprogramm
 /**********************************************************************************************************************/
 int main (void)
 {
@@ -238,23 +182,23 @@ int main (void)
   // Wenn beim beim einschalten Taste 5 Sek gedrückt
   // Start Uhrzeit aus ext.EEPROM/int.EEPROM/Flash laden und RTC stellen
   // In Dauerschleife StatusLED für "Zeit gesetzt" schnell blinken lassen
-  Set_RTC_On_Keypress();
+  set_rtc_on_keypress();
 
   // Wenn nach einschalten KEIN Tasterdruck, wird aktuelles Datum/Uhrzeit angezeigt
   // Dazu blinken die LEDs so oft, wie das Datums/Zeit - Teilstück angibt
   // LED0 = 5xblink, LED1 = 2xblink, LED2 = 15xblink, LED3 = 1xblink --> 5. Februar 15:01 Uhr
   // Welche LED was anzeigt, kann in config.h angepaßt werden
-  Show_Date_And_Time();
+  show_date_and_time();
 
   // Normalbetrieb, Hauptschleife
   while (1) {
     // LEDs werden passend zum Datum gesteuert bis Tasterdruck, Schlafenszeit erreicht, gar keine Daten für heute
-    Work_Until_Sleeptime();
+    work_until_sleeptime();
     // Schlafen bis 01:30
-    Sleep_Until_1_30();
+    sleep_until(0x01, 0x30);
     // ggf. Zeit umstellen ME(S)Z
-    Work_On_1_30();
+    work_on_1_30();
     // schlafen bis reguläre Weckzeit
-    Sleep_Until_Wakeuptime();
+    sleep_until((load_pbcd_byte(ADR_WAKEUP_HOUR)), (load_pbcd_byte(ADR_WAKEUP_MINUTE)));
   }
 }

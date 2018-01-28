@@ -32,6 +32,7 @@
 #define DS_DATE               0x04
 #define DS_MONTH              0x05
 #define DS_YEAR               0x06
+
 // ---------------------------------------------------------------------------------------------------------------------
 // Liest Register aus DS3231, Rückgabe = PACKED BCD Format
 uint8_t ds_read_reg (uint8_t reg);

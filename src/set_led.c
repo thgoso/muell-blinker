@@ -24,6 +24,7 @@
 #include <avr/io.h>
 #include <util/delay.h>
 #include "config.h"
+#include "pbcd.h"
 #include "set_led.h"
 
 // LEDs am LED_KEY_PORT setzten, am Tasteranschluss jedoch Pull-Up an lassen
@@ -44,13 +45,14 @@ void leds_blink_endless (uint8_t led_byte)
   }
 }
 /***********************************************************************************************************************
-* LEDs werden so oft an/aus geschaltet wie n angibt, danach eine Sekunde Pause
-* Übergabe: Anzahl An/Aus in n
+* LEDs werden so oft an/aus geschaltet wie pbcd angibt, danach eine Sekunde Pause
+* Übergabe: Anzahl An/Aus in pbcd in Packed BDS Form, also ein Zeitregister
 *           LED-Byte zum steuern von LED_KEY_PORT
 ***********************************************************************************************************************/
-void leds_blink_n_times (uint8_t n, uint8_t led_byte)
+void leds_blink_pbcd_times (uint8_t pbcd, uint8_t led_byte)
 {
-  for ( ;n>0; n--) {
+  pbcd_to_bin(pbcd);
+  for ( ;pbcd>0; pbcd--) {
     SET_LEDS(led_byte);
     _delay_ms(100);
     CLEAR_LEDS;
@@ -69,14 +71,27 @@ uint8_t leds_flash_100_900 (uint8_t led_byte)
 {
   uint8_t cnt;
 
+#if LED_MODE == MODE_BLINK
   SET_LEDS(led_byte);
   _delay_ms(100);
-#if LED_MODE == MODE_BLINK
   CLEAR_LEDS;
-#endif
   for (cnt=18; cnt>0; cnt--) {
     if ((LED_KEY_PIN & (1<<KEY)) == 0) return KEY_PRESSED;
     _delay_ms(50);
   }
   return KEY_UNPRESSED;
+
+#elif LED_MODE == MODE_ON
+  SET_LEDS(led_byte);
+  for (cnt=20; cnt>0; cnt--) {
+    if ((LED_KEY_PIN & (1<<KEY)) == 0) {
+      CLEAR_LEDS;
+      return KEY_PRESSED;
+    }
+    _delay_ms(50);
+  }
+  CLEAR_LEDS;
+  return KEY_UNPRESSED;
+
+#endif
 }

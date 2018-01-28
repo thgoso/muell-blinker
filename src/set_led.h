@@ -28,8 +28,10 @@
 // Endlose Statusblinkanzeige, Übergabe LED-Byte zur Steuerung
 void leds_blink_endless (uint8_t led_byte) __attribute__((noreturn));
 // ---------------------------------------------------------------------------------------------------------------------
-// Läßt LEDs n mal aufleuchten/ausgehen, Übergabe Anzahl, LED-Byte zur Steuerung
-void leds_blink_n_times (uint8_t n, uint8_t led_byte);
+// Läßt LEDs n mal aufleuchten/ausgehen
+// Übergabe: Anzahl in Packed-BCD-Form (also Zeitbyte übergeben)
+//           LED-Byte zur Steuerung
+void leds_blink_pbcd_times (uint8_t pbcd, uint8_t led_byte);
 // ---------------------------------------------------------------------------------------------------------------------
 // Schaltet LEDs 100ms an, 900ms aus, Bricht ab (mit LEDs aus) wenn zwischendurch Taster gedrückt wurde
 // Übergabe: LED-Byte zur Steuerung

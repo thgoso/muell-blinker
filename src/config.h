@@ -39,7 +39,6 @@
 #define DATA_LOAD             FROM_EEPROM_AT24C32
 // ---------------------------------------------------------------------------------------------------------------------
 // Hier bei Variante FROM_FLASH_AVR oder FROM_EEPROM_AVR Abfuhrtabelle einfügen
-
 /*
 #define MY_DATA               0x04,0x01,0x00,0x00,0x00,0x00,0x00,0x02,0x00,0x00,0x00,0x00,0x00,0x01,0x08,0x00, \
                               0x00,0x00,0x00,0x00,0x00,0x02,0x00,0x00,0x00,0x0C,0x03,0x05,0x08,0x00,0x00,0x00, \
@@ -67,14 +66,13 @@
                               0x08,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x02,0x00,0x00,0x00,0x00,0x00,0x00, \
                               0x26,0x01,0x18,0x20,0x05,0x12,0x00,0x22,0x00,0x25,0x28
 */
-
 // ---------------------------------------------------------------------------------------------------------------------
 // Adressen I2C Busteilnehmer ggf. anpassen       // I2C Slave Adresse DS3231
 #define DS_I2CADR_R           0b11010001          // Für Lesezugriffe
 #define DS_I2CADR_W           0b11010000          // Für Schreibzugriffe
                                                   // I2C Slave Adresse AT24C32
-#define AT_I2CADR_R           0b10101101          // Für Lesezugriffe        <--- OHNE Lötbrücken auf DS-Board
-#define AT_I2CADR_W           0b10101100          // Für Schreibzugriffe     <--- weniger Stromverbrauch
+#define AT_I2CADR_R           0b10101111          // Für Lesezugriffe        <--- OHNE Lötbrücken auf DS-Board
+#define AT_I2CADR_W           0b10101110          // Für Schreibzugriffe     <--- weniger Stromverbrauch
 // ---------------------------------------------------------------------------------------------------------------------
 // die LEDs und Taster müssen sich an einem gemeinsamen Port befinden
 // Auf den Port wird immer ganz geschrieben... Weitere Hardware daran nicht erlaubt
@@ -116,8 +114,10 @@
 // ---------------------------------------------------------------------------------------------------------------------
 // Alles Ausgänge, Taster = Eingang Alle LEDs aus, Taster interner Pull-Up = an
 // SDA, SCL, INT0 an PB0, PB1, PB2 Alles High-Z-Eingänge (Zustand nach Reset ist sowieso High-Z)
+// DS3231-INT --> AVR-INT0 (INT0-IRQ einschalten)
 #define INIT_IO               LED_KEY_DDR = (0b11111111 & ~(1<<KEY)); \
-                              LED_KEY_PORT = (0b00000000 | (1<<KEY));
+                              LED_KEY_PORT = (0b00000000 | (1<<KEY)); \
+                              GIMSK = 0b01000000;
 // ---------------------------------------------------------------------------------------------------------------------
 // Fehlercheck config.h
 #if LED_MODE != MODE_BLINK && LED_MODE != MODE_ON
