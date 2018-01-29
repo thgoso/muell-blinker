@@ -112,11 +112,10 @@ in der Datei "config.h" fest einbauen.
 
 Linke Tabellenseite bitte mit "1" füllen (Abholung, LED an) oder leeren mit Druck auf "ENTFERNEN" (keine Abholung LED aus)
 
-Linux Nutzer können sich die "Abfuhrkalender.ods" füllen, speichern und danach
-als CSV-Datei exportieren. Feldtrenner bitte "TAB" nutzen, Texttrenner leer lassen.
-Danach kann man sich aus dem CSV leicht eine Intel-Hex-Datei für's EEPROM 24C32 erstellen:
+Linux Nutzer können sich die "Abfuhrkalender.ods" füllen, speichern und danach mittels Script verschiedene Ausgabeformate erzeugen lassen um eine passende Datei für das externe EEPROM zu erzeugen:
+
 ```
-conv_csv_to_hex.sh Dateiname.csv > Dateiname.hex
+bash ./conv_Abfuhrkalender.sh
 ```
 
 ### Datenspeicher = 24C32 EEPROM auf DS-Board:
