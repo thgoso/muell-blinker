@@ -105,18 +105,16 @@ Zeitumstellung MESZ > MEZ = 28. Oktober
 | Byte Hexadezimal | 0x01 | 0x02 | 0x18 | 0x15 | 0x00 | 0x06 | 0x00 | 0x21 | 0x30 | 0x25 | 0x28 |
 
 Zum Erstellen der EEPROM, Flash Daten kann die Datei "Abfuhrkalender.ods" genutzt werden.
-Nach Eingabe der Daten (grüner Bereich) kann man sich die automatisch erstellten
-EEPROM/Flash Daten (schwarzer Bereich) in die Zwischenablage kopieren
-und damit eine Datei zum brennen des EEPROMS auf dem DS-Board erstellen, oder diese Daten
-in der Datei "config.h" fest einbauen.
+Nach Eingabe der Daten (grüner Bereich) kann man sich die automatisch erstellten EEPROM/Flash Daten (schwarzer Bereich) in die Zwischenablage kopieren
+und damit eine Datei zum brennen des EEPROMS auf dem DS-Board erstellen, oder diese Daten in der Datei "config.h" fest einbauen.
 
 Linke Tabellenseite bitte mit "1" füllen (Abholung, LED an) oder leeren mit Druck auf "ENTFERNEN" (keine Abholung LED aus)
 
-Linux Nutzer können sich die "Abfuhrkalender.ods" füllen, speichern und danach mittels Script verschiedene Ausgabeformate erzeugen lassen um eine passende Datei für das externe EEPROM zu erzeugen:
-
+**Linux Nutzer** können sich die **Abfuhrkalender.ods** füllen, speichern und danach mittels Script verschiedene Ausgabeformate erzeugen lassen um eine passende Datei für das externe EEPROM oder zum einkompilieren in den Quellcode zu erzeugen. Ebenfalls ist es möglich eine **VCalender-Datei** einzulesen und zu versuchen der Datei die passenden Abholtermine zu entlocken:
 ```
-bash ./conv_Abfuhrkalender.sh
+bash ./conv.sh
 ```
+Ist interaktiv. Als Beispiel ist die Datei "Abfuhrkalender.ics" hinterlegt, die man testhalber einlesen kann.
 
 ### Datenspeicher = 24C32 EEPROM auf DS-Board:
 - AVR einmalig brennen, Jährlich neue Abfuhrtabelle auf EEPROM des DS-Board speichern.
@@ -191,4 +189,3 @@ Bei geschickter Wahl von "Weckzeit" und "Schlafenszeit" des AVR läßt sich somi
 
 ### Stromverbrauch ca.
 Je nach LEDs und Vorwiderständen bei mir 3-5 mA wenn LEDs angesteuert werden und 150 µA wenn der AVR schläft (@Vcc = 4,0 Volt). Auf dem DS-Board wurde die rote Power-On-LED entfernt.
-
