@@ -125,7 +125,7 @@ function make_from_ics() {
 	  # Adresse (EEPROM/Array) für Datum berechnen: ((Monat-1)*32)+(Tag-1)
 	  adr=$(echo "${daten[$cnt]}" | awk -F "." '{print (($2 - 1) * 32) + ($1 - 1)}')
 	  # LED-Byte neu berechnen
-	  hexdata[$adr]=$((${tonnen[$cnt]} + ${hexdata[$adr]}))
+	  hexdata[$adr]=$((${tonnen[$cnt]} | ${hexdata[$adr]}))
 	done
 	# Ausgabedaten in hexdata[] jetzt erst umwandeln in hex
 	for ((cnt=0; cnt<=394; cnt++)) ; do
